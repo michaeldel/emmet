@@ -7,4 +7,7 @@ emmet: emmet.c
 runtests: test.sh
 	./test.sh
 
-.PHONY: runtests
+clean:
+	rm -f emmet
+
+.PHONY: clean runtests
