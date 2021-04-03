@@ -107,6 +107,8 @@ int main(void) {
     }
 
     for (size_t i = 0; i != num_tags; i++) {
+        if (i != 0) putchar('\n');
+
         for (size_t j = 0; j != i; j++)
             printf("  ");
         putchar('<');
@@ -119,11 +121,13 @@ int main(void) {
         if (tag->class != NULL)
             printf(" class=\"%s\"", tag->class);
 
-        puts(">");
+        putchar('>');
     }
+
     for (size_t i = 0; i != num_tags; i++) {
-        for (size_t j = 0; j != num_tags - i - 1; j++)
-            printf("  ");
+        if (i != 0)
+            for (size_t j = 0; j != num_tags - i - 1; j++)
+                printf("  ");
         printf("</%s>\n", tagstack[num_tags - i - 1]->name);
     }
 
