@@ -4,7 +4,7 @@ ret=0;
 tc() {
     output=$(echo "$1" | ./emmet)
     diff -u <(echo "$2" | sed -e '/^$/d') <(echo "$output") && echo "ok $1" || {
-        "FAIL $2"
+        echo "FAIL $1"
         ret=1
     }
 }
