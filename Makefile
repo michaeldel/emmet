@@ -4,7 +4,7 @@ CFLAGS = -Wall -Wextra -pedantic
 emmet: emmet.c
 	$(CC) $(CFLAGS) -o $@ $^
 
-runtests: test.sh
+runtests: test.sh emmet
 	./test.sh
 
 clean:
