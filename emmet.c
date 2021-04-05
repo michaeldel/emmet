@@ -5,6 +5,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <sysexits.h>
+
 #define MAX_TAG_NAME_LEN 32
 #define MAX_TAG_ID_LEN 32
 #define MAX_TAG_CLASS 32
@@ -165,8 +167,8 @@ int main(void) {
             reading = false;
             break;
         default:
-            printf("ERROR: invalid operator: %c (%d)\n", op, op);
-            exit(1); /* TODO: use standard error code */
+            fprintf(stderr, "ERROR: invalid operator: %c (%d)\n", op, op);
+            exit(EX_DATAERR);
         }
     }
 
