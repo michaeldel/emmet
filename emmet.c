@@ -29,24 +29,21 @@ struct tag {
     char * name;
     char * id;
     char * class;
+
+    struct tag * child;
 };
 
 struct tag * new_tag() {
     /* TODO: check NULL */
     struct tag * result = (struct tag *) malloc(sizeof(struct tag));
+
     result->name = NULL;
     result->id = NULL;
     result->class = NULL;
 
+    result->child = NULL;
+
     return result;
-}
-
-static const struct tag * tagstack[BUFSIZ];
-static size_t num_tags = 0;
-
-void push_tag(const struct tag * tag) {
-    /* TODO: check size */
-    tagstack[num_tags++] = tag;
 }
 
 char * read_word() {
@@ -79,11 +76,44 @@ char * read_word() {
     return result;
 }
 
+void indent(unsigned int level) {
+    for (unsigned int i = 0; i != level; i++)
+        printf("  ");
+}
+
+void render(struct tag * tag, unsigned int level) {
+    indent(level);
+
+    putchar('<');
+    fputs(tag->name, stdout);
+
+    if (tag->id != NULL)
+        printf(" id=\"%s\"", tag->id);
+    if (tag->class != NULL)
+        printf(" class=\"%s\"", tag->class);
+
+    putchar('>');
+
+    if (tag->child != NULL) {
+        putchar('\n');
+        render(tag->child, level + 1);
+        indent(level);
+    }
+
+    fputs("</", stdout);
+    fputs(tag->name, stdout);
+    fputs(">\n", stdout);
+}
+
 int main(void) {
     bool reading = true;
 
+    struct tag * first = NULL;
+    struct tag * previous = NULL;
+
     while (reading) {
         struct tag * tag = new_tag();
+        if (first == NULL) first = tag;
         tag->name = read_word();
 
         char op;
@@ -103,33 +133,12 @@ int main(void) {
             exit(EXIT_FAILURE);
         }
 
-        push_tag(tag);
+        if (previous != NULL)
+            previous->child = tag;
+        previous = tag;
     }
 
-    for (size_t i = 0; i != num_tags; i++) {
-        if (i != 0) putchar('\n');
-
-        for (size_t j = 0; j != i; j++)
-            printf("  ");
-        putchar('<');
-
-        const struct tag * tag = tagstack[i];
-        printf("%s", tag->name);
-
-        if (tag->id != NULL)
-            printf(" id=\"%s\"", tag->id);
-        if (tag->class != NULL)
-            printf(" class=\"%s\"", tag->class);
-
-        putchar('>');
-    }
-
-    for (size_t i = 0; i != num_tags; i++) {
-        if (i != 0)
-            for (size_t j = 0; j != num_tags - i - 1; j++)
-                printf("  ");
-        printf("</%s>\n", tagstack[num_tags - i - 1]->name);
-    }
+    render(first, 0);
 
     return EXIT_SUCCESS;
 }
