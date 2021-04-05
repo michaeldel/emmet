@@ -20,12 +20,19 @@ char peek() {
     return counter == BUFSIZ ? '\0' : source[counter];
 }
 
+bool is_operator(char c) {
+    return (
+        c == '>' || c == '+'
+    );
+}
+
 struct tag {
     char * name;
     char * id;
     char * class;
 
     struct tag * child;
+    struct tag * sibling;
 };
 
 struct tag * new_tag() {
@@ -37,6 +44,7 @@ struct tag * new_tag() {
     result->class = NULL;
 
     result->child = NULL;
+    result->sibling = NULL;
 
     return result;
 }
@@ -66,7 +74,7 @@ char * read_class() {
 }
 
 struct tag * read_tag() {
-    struct tag * tag = (struct tag *)malloc(sizeof(struct tag));;
+    struct tag * tag = new_tag();
     assert(tag != NULL);
 
     const size_t start = counter;
@@ -87,7 +95,7 @@ struct tag * read_tag() {
     }
     
     /* TODO: id, other classes, attrs, etc */
-    while (peek() != '>' && peek() != '\0') advance();
+    while (!is_operator(peek()) && peek() != '\0') advance();
 
     return tag;
 }
@@ -119,6 +127,10 @@ void render(struct tag * tag, unsigned int level) {
     fputs("</", stdout);
     fputs(tag->name, stdout);
     fputs(">\n", stdout);
+
+    if (tag->sibling != NULL) {
+        render(tag->sibling, level);
+    }
 }
 
 int main(void) {
@@ -126,21 +138,29 @@ int main(void) {
     char * err = fgets(source, BUFSIZ, stdin);
     assert(err != NULL);
 
-    struct tag * first = NULL;
-    struct tag * previous = NULL;
+    struct tag * first = read_tag();
+    struct tag * previous = first;
 
-    for (;;) {
-        struct tag * tag = read_tag();
-        if (first == NULL) first = tag;
+    bool reading = true;
 
+    while (reading)  {
         const char op = advance();
-        assert(op == '>' || op == '\0');
-
-        if (previous != NULL)
-            previous->child = tag;
-        previous = tag;
-
-        if (op == '\0') break;
+        switch(op) {
+        case '>':
+            previous->child = read_tag();
+            previous = previous->child;
+            break;
+        case '+':
+            previous->sibling = read_tag();
+            previous = previous->sibling;
+            break;
+        case '\0':
+            reading = false;
+            break;
+        default:
+            printf("ERROR: invalid operator: %c (%d)\n", op, op);
+            exit(1); /* TODO: use standard error code */
+        }
     }
 
     render(first, 0);

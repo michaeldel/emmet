@@ -24,6 +24,13 @@ tc 'nav#menu>ul>li.item' '
   </ul>
 </nav>
 '
+tc 'section>p+p+p' '
+<section>
+  <p></p>
+  <p></p>
+  <p></p>
+</section>
+'
 
 tc 'a' '<a></a>'
 tc 'a>b' '
