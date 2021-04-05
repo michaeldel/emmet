@@ -7,6 +7,9 @@ emmet: emmet.c
 runtests: test.sh emmet
 	./test.sh
 
+memcheck: emmet
+	echo 'a>b>c' | valgrind --error-exitcode=1 --leak-check=full ./emmet
+
 clean:
 	rm -f emmet
 

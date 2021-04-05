@@ -64,7 +64,7 @@ char * read_id() {
     while (isalnum(peek())) advance();
 
     const size_t length = counter - start;
-    char * id = (char *)calloc(length, sizeof(char));
+    char * id = (char *)calloc(length + 1, sizeof(char));
     strncpy(id, &source[start], length);
 
     return id;
@@ -92,7 +92,7 @@ struct tag * read_tag() {
 
     const size_t name_length = counter - start;
     /* TODO: length == 0 */
-    tag->name = (char *)calloc(name_length, sizeof(char));
+    tag->name = (char *)calloc(name_length + 1, sizeof(char));
     strncpy(tag->name, &source[start], name_length);
 
     if (peek() == '#') {
