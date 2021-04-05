@@ -154,6 +154,19 @@ void render(struct tag * tag, unsigned int level) {
     }
 }
 
+void clean(struct tag * tag) {
+    if (tag->sibling == NULL || tag->name != tag->sibling->name) {
+        free(tag->name);
+        free(tag->id);
+        free(tag->class);
+    }
+
+    if (tag->sibling != NULL) clean(tag->sibling);
+    if (tag->child != NULL) clean(tag->child);
+
+    free(tag);
+}
+
 int main(void) {
     /* TODO: handle other lengths */
     char * err = fgets(source, BUFSIZ, stdin);
@@ -203,6 +216,7 @@ int main(void) {
     }
 
     render(first, 0);
+    clean(first);
 
     return EXIT_SUCCESS;
 }
