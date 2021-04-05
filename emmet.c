@@ -3,26 +3,21 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #define MAX_TAG_NAME_LEN 32
 #define MAX_TAG_ID_LEN 32
 #define MAX_TAG_CLASS 32
 
-size_t bufindex = 0;
-char buffer[BUFSIZ];
+size_t counter = 0;
+char source[BUFSIZ];
 
-char next_buffer_char() {
-    if (buffer[bufindex] == '\0' || buffer[bufindex] == '\n') {
-        if (fgets(buffer, BUFSIZ, stdin) == NULL)
-            return '\0';
-        bufindex = 0;
-    }
-
-    return buffer[bufindex++];
+char advance() {
+    return source[counter++];
 }
 
-void seek_buffer_back() {
-    bufindex--;
+char peek() {
+    return counter == BUFSIZ ? '\0' : source[counter];
 }
 
 struct tag {
@@ -46,34 +41,55 @@ struct tag * new_tag() {
     return result;
 }
 
-char * read_word() {
-    size_t n = 16;
-    char * result = (char *) calloc(n, sizeof(char));
+char * read_id() {
+    const size_t start = counter;
 
-    char c;
+    while (isalnum(peek())) advance();
 
-    size_t i = 0;
-    assert(i < n);
+    const size_t length = counter - start;
+    char * id = (char *)calloc(length, sizeof(char));
+    strncpy(id, &source[start], length);
 
-    while ((c = next_buffer_char())) {
-        if (!isalnum(c)) {
-            seek_buffer_back();
-            break;
-        }
+    return id;
+}
 
-        result[i++] = c;
+char * read_class() {
+    const size_t start = counter;
 
-        if (i == n) {
-            n <<= 2;
-            assert(n > i);
+    while (isalnum(peek())) advance();
 
-            /* TODO: check NULL */
-            result = (char *) reallocarray(result, n, sizeof(char));
-            assert(result != NULL);
-        }
+    const size_t length = counter - start;
+    char * class = (char *)calloc(length, sizeof(char));
+    strncpy(class, &source[start], length);
+
+    return class;
+}
+
+struct tag * read_tag() {
+    struct tag * tag = (struct tag *)malloc(sizeof(struct tag));;
+    assert(tag != NULL);
+
+    const size_t start = counter;
+
+    while (isalnum(peek())) advance();
+
+    const size_t name_length = counter - start;
+    tag->name = (char *)calloc(name_length, sizeof(char));
+    strncpy(tag->name, &source[start], name_length);
+
+    if (peek() == '#') {
+        advance();
+        tag->id = read_id();
     }
+    if (peek() == '.') {
+        advance();
+        tag->class = read_class();
+    }
+    
+    /* TODO: id, other classes, attrs, etc */
+    while (peek() != '>' && peek() != '\0') advance();
 
-    return result;
+    return tag;
 }
 
 void indent(unsigned int level) {
@@ -106,36 +122,25 @@ void render(struct tag * tag, unsigned int level) {
 }
 
 int main(void) {
-    bool reading = true;
+    /* TODO: handle other lengths */
+    char * err = fgets(source, BUFSIZ, stdin);
+    assert(err != NULL);
 
     struct tag * first = NULL;
     struct tag * previous = NULL;
 
-    while (reading) {
-        struct tag * tag = new_tag();
+    for (;;) {
+        struct tag * tag = read_tag();
         if (first == NULL) first = tag;
-        tag->name = read_word();
 
-        char op;
-
-        while ((op = next_buffer_char()) != '>' && reading)
-        switch (op) {
-        case '#':
-            tag->id = read_word();
-            break;
-        case '.':
-            tag->class = read_word();
-            break;
-        case '\0':
-            reading = false;
-            break;
-        default:
-            exit(EXIT_FAILURE);
-        }
+        const char op = advance();
+        assert(op == '>' || op == '\0');
 
         if (previous != NULL)
             previous->child = tag;
         previous = tag;
+
+        if (op == '\0') break;
     }
 
     render(first, 0);
