@@ -39,8 +39,12 @@ struct tag {
 };
 
 struct tag * new_tag() {
-    /* TODO: check NULL */
     struct tag * result = (struct tag *) malloc(sizeof(struct tag));
+
+    if (result == NULL) {
+        perror("could not allocate new tag");
+        abort();
+    }
 
     result->name = NULL;
     result->id = NULL;
