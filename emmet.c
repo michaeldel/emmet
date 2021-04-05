@@ -22,7 +22,7 @@ char peek() {
 
 bool is_operator(char c) {
     return (
-        c == '>' || c == '+'
+        c == '>' || c == '+' || c == '^'
     );
 }
 
@@ -31,6 +31,7 @@ struct tag {
     char * id;
     char * class;
 
+    struct tag * parent;
     struct tag * child;
     struct tag * sibling;
 };
@@ -43,6 +44,7 @@ struct tag * new_tag() {
     result->id = NULL;
     result->class = NULL;
 
+    result->parent = NULL;
     result->child = NULL;
     result->sibling = NULL;
 
@@ -148,11 +150,16 @@ int main(void) {
         switch(op) {
         case '>':
             previous->child = read_tag();
+            previous->child->parent = previous;
             previous = previous->child;
             break;
         case '+':
             previous->sibling = read_tag();
             previous = previous->sibling;
+            break;
+        case '^':
+            previous->parent->sibling = read_tag();
+            previous = previous->parent->sibling;
             break;
         case '\0':
             reading = false;

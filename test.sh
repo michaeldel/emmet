@@ -31,6 +31,14 @@ tc 'section>p+p+p' '
   <p></p>
 </section>
 '
+tc 'section>header>h1^footer' '
+<section>
+  <header>
+    <h1></h1>
+  </header>
+  <footer></footer>
+</section>
+'
 
 tc 'a' '<a></a>'
 tc 'a>b' '
