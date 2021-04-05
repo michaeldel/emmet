@@ -39,6 +39,13 @@ tc 'section>header>h1^footer' '
   <footer></footer>
 </section>
 '
+tc 'ul>li*3' '
+<ul>
+  <li></li>
+  <li></li>
+  <li></li>
+</ul>
+'
 
 tc 'a' '<a></a>'
 tc 'a>b' '

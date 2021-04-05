@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <ctype.h>
+#include <limits.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -24,7 +25,7 @@ char peek() {
 
 bool is_operator(char c) {
     return (
-        c == '>' || c == '+' || c == '^'
+        c == '>' || c == '+' || c == '^' || c == '*'
     );
 }
 
@@ -108,6 +109,17 @@ struct tag * read_tag() {
     return tag;
 }
 
+unsigned int read_uint() {
+    const size_t start = counter;
+    while (isdigit(peek())) advance();
+    const long result = strtol(&source[start], NULL, 10);
+
+    /* TODO: proper overflow handling */
+    assert(result >= 0 && result <= UINT_MAX);
+
+    return (unsigned int)result;
+}
+
 void indent(unsigned int level) {
     for (unsigned int i = 0; i != level; i++)
         printf("  ");
@@ -167,6 +179,19 @@ int main(void) {
             previous->parent->sibling = read_tag();
             previous = previous->parent->sibling;
             break;
+        case '*':
+            for (unsigned int n = read_uint(), i = 1; i != n; i++) {
+                /* TODO: proper handling */
+                assert(n != 0);
+
+                struct tag * cloned = new_tag();
+                memcpy(cloned, previous, sizeof(struct tag));
+
+                previous->sibling = cloned;
+                previous = previous->sibling;
+            }
+            break;            
+        case '\n':
         case '\0':
             reading = false;
             break;
