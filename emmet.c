@@ -91,6 +91,7 @@ struct tag * read_tag() {
     while (isalnum(peek())) advance();
 
     const size_t name_length = counter - start;
+    /* TODO: length == 0 */
     tag->name = (char *)calloc(name_length, sizeof(char));
     strncpy(tag->name, &source[start], name_length);
 
