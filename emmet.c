@@ -167,13 +167,13 @@ void clean(struct tag * tag) {
     free(tag);
 }
 
-int main(void) {
+struct tag * parse(void) {
     /* TODO: handle other lengths */
     char * err = fgets(source, BUFSIZ, stdin);
     assert(err != NULL);
 
-    struct tag * first = read_tag();
-    struct tag * previous = first;
+    struct tag * root = read_tag();
+    struct tag * previous = root;
 
     bool reading = true;
 
@@ -204,7 +204,7 @@ int main(void) {
                 previous->sibling = cloned;
                 previous = previous->sibling;
             }
-            break;            
+            break;
         case '\n':
         case '\0':
             reading = false;
@@ -215,8 +215,13 @@ int main(void) {
         }
     }
 
-    render(first, 0);
-    clean(first);
+    return root;
+}
+
+int main(void) {
+    struct tag * tree = parse();    
+    render(tree, 0);
+    clean(tree);
 
     return EXIT_SUCCESS;
 }
