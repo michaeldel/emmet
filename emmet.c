@@ -25,7 +25,7 @@ char peek() {
 
 bool is_operator(char c) {
     return (
-        c == '>' || c == '+' || c == '^' || c == '*'
+        c == '>' || c == '+' || c == '^' || c == '*' || c == ')'
     );
 }
 
@@ -82,7 +82,14 @@ char * read_class() {
     return class;
 }
 
+struct tag * parse();
+
 struct tag * read_tag() {
+    if (peek() == '(') {
+        advance();
+        return parse();
+    }
+
     struct tag * tag = new_tag();
     assert(tag != NULL);
 
@@ -168,16 +175,10 @@ void clean(struct tag * tag) {
 }
 
 struct tag * parse(void) {
-    /* TODO: handle other lengths */
-    char * err = fgets(source, BUFSIZ, stdin);
-    assert(err != NULL);
-
     struct tag * root = read_tag();
     struct tag * previous = root;
 
-    bool reading = true;
-
-    while (reading)  {
+    for (;;)  {
         const char op = advance();
         switch(op) {
         case '>':
@@ -205,20 +206,24 @@ struct tag * parse(void) {
                 previous = previous->sibling;
             }
             break;
+        case ')':
+            return root;
         case '\n':
         case '\0':
-            reading = false;
-            break;
+            /* TODO: handle properly in groups */
+            return root;
         default:
             fprintf(stderr, "ERROR: invalid operator: %c (%d)\n", op, op);
             exit(EX_DATAERR);
         }
     }
-
-    return root;
 }
 
 int main(void) {
+    /* TODO: handle other lengths */
+    char * err = fgets(source, BUFSIZ, stdin);
+    assert(err != NULL);
+
     struct tag * tree = parse();    
     render(tree, 0);
     clean(tree);

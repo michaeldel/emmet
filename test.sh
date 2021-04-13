@@ -39,6 +39,20 @@ tc 'section>header>h1^footer' '
   <footer></footer>
 </section>
 '
+tc 'section>(header>nav>ul>li)+footer>p' '
+<section>
+  <header>
+    <nav>
+      <ul>
+        <li></li>
+      </ul>
+    </nav>
+  </header>
+  <footer>
+    <p></p>
+  </footer>
+</section>
+'
 tc 'ul>li*3' '
 <ul>
   <li></li>
@@ -58,6 +72,14 @@ tc 'a>b>c' '
   <b>
     <c></c>
   </b>
+</a>
+'
+tc 'a>(b>c)+d' '
+<a>
+  <b>
+    <c></c>
+  </b>
+  <d></d>
 </a>
 '
 exit $ret
