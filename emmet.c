@@ -29,6 +29,32 @@ bool is_operator(char c) {
     );
 }
 
+char * expand_template(const char * template, unsigned int value, unsigned int max) {
+    assert(max >= value);
+
+    /* TODO: multiple templates in same string */
+    const char * pc = strstr(template, "$");
+    if (pc == NULL) return template;
+
+    assert(pc > template);
+    const size_t left_size = (size_t)(pc - template);
+    const size_t right_size = strlen(template) - 1;
+
+    /* TODO: adjust to max value */
+    char formatted[5];
+    snprintf(formatted, sizeof(formatted), "%d", value);
+
+    const size_t size = left_size + strlen(formatted) + right_size;
+    char * expanded = (char *)calloc(size, sizeof(char));
+    assert(expanded != NULL); /* TODO: proper check */
+
+    strncat(expanded, template, left_size);
+    strcat(expanded, formatted);
+    strncat(expanded, pc + 1, right_size);
+
+    return expanded;
+}
+
 struct tag {
     char * name;
     char * id;
@@ -58,10 +84,14 @@ struct tag * new_tag() {
     return result;
 }
 
+bool is_name_char(char c) {
+    return isalnum(c) || c == '$' || c == '@' || c == '-';
+}
+
 char * read_id() {
     const size_t start = counter;
 
-    while (isalnum(peek())) advance();
+    while (is_name_char(peek())) advance();
 
     const size_t length = counter - start;
     char * id = (char *)calloc(length + 1, sizeof(char));
@@ -73,7 +103,7 @@ char * read_id() {
 char * read_class() {
     const size_t start = counter;
 
-    while (isalnum(peek())) advance();
+    while (is_name_char(peek())) advance();
 
     const size_t length = counter - start;
     char * class = (char *)calloc(length, sizeof(char));
@@ -194,18 +224,30 @@ struct tag * parse(void) {
             previous->parent->sibling = read_tag();
             previous = previous->parent->sibling;
             break;
-        case '*':
-            for (unsigned int n = read_uint(), i = 1; i != n; i++) {
-                /* TODO: proper handling */
-                assert(n != 0);
+        case '*': {
+            /* TODO: max value */
+            const unsigned int n = read_uint();
+            const struct tag * first = previous;
 
+            for (unsigned int i = 1; i < n; i++) {
                 struct tag * cloned = new_tag();
                 memcpy(cloned, previous, sizeof(struct tag));
 
                 previous->sibling = cloned;
                 previous = previous->sibling;
             }
-            break;
+
+            struct tag * current = first;
+
+            /* TODO: same for id, text, attr, etc */
+            for (unsigned int i = 1; i <= n; i++) {
+                if (current->class != NULL) {
+                    current->class = expand_template(current->class, i, n);
+                }
+
+                current = current->sibling;
+            }
+            } break;
         case ')':
             return root;
         case '\n':

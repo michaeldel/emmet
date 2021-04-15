@@ -60,6 +60,37 @@ tc 'ul>li*3' '
   <li></li>
 </ul>
 '
+tc 'ul>li.item$*3' '
+<ul>
+  <li class="item1"></li>
+  <li class="item2"></li>
+  <li class="item3"></li>
+</ul>
+'
+
+tc 'ul>li.item$$*3' '
+<ul>
+  <li class="item01"></li>
+  <li class="item02"></li>
+  <li class="item03"></li>
+</ul>
+'
+
+tc 'ul>li.item$@-*3' '
+<ul>
+  <li class="item3"></li>
+  <li class="item2"></li>
+  <li class="item1"></li>
+</ul>
+'
+
+tc 'ul>li.item$@3*5' '
+<ul>
+  <li class="item3"></li>
+  <li class="item4"></li>
+  <li class="item5"></li>
+</ul>
+'
 
 tc 'a' '<a></a>'
 tc 'a>b' '
