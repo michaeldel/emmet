@@ -36,13 +36,21 @@ char * expand_template(const char * template, unsigned int value, unsigned int m
     const char * pc = strstr(template, "$");
     if (pc == NULL) return template;
 
+    char * pci = pc;
+    while (*pci == '$') pci++;
+
+    const unsigned int padding = pci - pc - 1;
+
     assert(pc > template);
     const size_t left_size = (size_t)(pc - template);
     const size_t right_size = strlen(template) - 1;
 
+    char format[BUFSIZ];
+    sprintf(format, "%%0%dd", padding + 1);
+
     /* TODO: adjust to max value */
     char formatted[5];
-    snprintf(formatted, sizeof(formatted), "%d", value);
+    snprintf(formatted, sizeof(formatted), format, value);
 
     const size_t size = left_size + strlen(formatted) + right_size;
     char * expanded = (char *)calloc(size, sizeof(char));
@@ -50,7 +58,7 @@ char * expand_template(const char * template, unsigned int value, unsigned int m
 
     strncat(expanded, template, left_size);
     strcat(expanded, formatted);
-    strncat(expanded, pc + 1, right_size);
+    strncat(expanded, pc + padding + 1, right_size);
 
     return expanded;
 }

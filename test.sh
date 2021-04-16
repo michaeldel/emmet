@@ -113,4 +113,17 @@ tc 'a>(b>c)+d' '
   <d></d>
 </a>
 '
+tc 'a.item$*10' '
+<a class="item1"></a>
+<a class="item2"></a>
+<a class="item3"></a>
+<a class="item4"></a>
+<a class="item5"></a>
+<a class="item6"></a>
+<a class="item7"></a>
+<a class="item8"></a>
+<a class="item9"></a>
+<a class="item10"></a>
+'
+
 exit $ret
