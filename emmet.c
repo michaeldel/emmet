@@ -30,10 +30,11 @@ bool is_operator(char c) {
 }
 
 char * expand_template(const char * template, unsigned int value, unsigned int max) {
+    /* TODO: properly refactor whole function */
     assert(max >= value);
 
     /* TODO: multiple templates in same string */
-    const char * pc = strstr(template, "$");
+    char * pc = strstr(template, "$");
     if (pc == NULL) return template;
 
     char * pci = pc;
@@ -41,9 +42,17 @@ char * expand_template(const char * template, unsigned int value, unsigned int m
 
     const unsigned int padding = pci - pc - 1;
 
+    if (*pci == '@') {
+        if (*(++pci) == '-') value = max - value + 1;
+    }
+
+    const size_t format_size = pci - pc;
+
     assert(pc > template);
+    assert(format_size > padding);
+
     const size_t left_size = (size_t)(pc - template);
-    const size_t right_size = strlen(template) - 1;
+    const size_t right_size = strlen(template) - left_size - format_size;
 
     char format[BUFSIZ];
     sprintf(format, "%%0%dd", padding + 1);
@@ -58,7 +67,7 @@ char * expand_template(const char * template, unsigned int value, unsigned int m
 
     strncat(expanded, template, left_size);
     strcat(expanded, formatted);
-    strncat(expanded, pc + padding + 1, right_size);
+    strncat(expanded, pci + 1, right_size);
 
     return expanded;
 }
