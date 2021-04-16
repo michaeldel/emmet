@@ -29,7 +29,7 @@ bool is_operator(char c) {
     );
 }
 
-char * expand_template(const char * template, unsigned int value, unsigned int max) {
+char * expand_template(char * template, unsigned int value, unsigned int max) {
     /* TODO: properly refactor whole function */
     assert(max >= value);
 
@@ -244,7 +244,7 @@ struct tag * parse(void) {
         case '*': {
             /* TODO: max value */
             const unsigned int n = read_uint();
-            const struct tag * first = previous;
+            struct tag * first = previous;
 
             for (unsigned int i = 1; i < n; i++) {
                 struct tag * cloned = new_tag();
