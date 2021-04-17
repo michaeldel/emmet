@@ -29,6 +29,18 @@ bool is_operator(char c) {
     );
 }
 
+struct placeholder {
+    const char * begin;
+    const char * end;
+
+    const bool reverse;
+    const unsigned int start_value;
+};
+
+struct template {
+    const char * source;
+};
+
 char * expand_template(char * template, unsigned int value, unsigned int max) {
     /* TODO: properly refactor whole function */
     assert(max >= value);
@@ -41,9 +53,12 @@ char * expand_template(char * template, unsigned int value, unsigned int max) {
     while (*pci == '$') pci++;
 
     const unsigned int padding = pci - pc - 1;
+    unsigned int min = 1;
 
     if (*pci == '@') {
         if (*(++pci) == '-') value = max - value + 1;
+        sscanf(pci, "%ud", &min);
+        while (isdigit(*pci)) pci++;
     }
 
     const size_t format_size = pci - pc;
@@ -59,7 +74,7 @@ char * expand_template(char * template, unsigned int value, unsigned int max) {
 
     /* TODO: adjust to max value */
     char formatted[5];
-    snprintf(formatted, sizeof(formatted), format, value);
+    snprintf(formatted, sizeof(formatted), format, min - 1 + value);
 
     const size_t size = left_size + strlen(formatted) + right_size;
     char * expanded = (char *)calloc(size, sizeof(char));

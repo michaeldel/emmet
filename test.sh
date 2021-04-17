@@ -89,6 +89,8 @@ tc 'ul>li.item$@3*5' '
   <li class="item3"></li>
   <li class="item4"></li>
   <li class="item5"></li>
+  <li class="item6"></li>
+  <li class="item7"></li>
 </ul>
 '
 
@@ -124,6 +126,11 @@ tc 'a.item$*10' '
 <a class="item8"></a>
 <a class="item9"></a>
 <a class="item10"></a>
+'
+tc 'a.item$@10*3' '
+<a class="item10"></a>
+<a class="item11"></a>
+<a class="item12"></a>
 '
 
 exit $ret
