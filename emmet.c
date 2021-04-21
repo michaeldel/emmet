@@ -87,10 +87,19 @@ char * expand_template(char * template, unsigned int value, unsigned int max) {
     return expanded;
 }
 
+struct attr {
+    char * name;
+    char * value;
+
+    struct attr * next;
+};
+
 struct tag {
     char * name;
-    char * id;
-    char * class;
+    struct attr * attrs;
+
+    unsigned int counter;
+    unsigned int counter_max;
 
     struct tag * parent;
     struct tag * child;
@@ -106,8 +115,8 @@ struct tag * new_tag() {
     }
 
     result->name = NULL;
-    result->id = NULL;
-    result->class = NULL;
+    result->attrs = NULL;
+    result->counter = 0;
 
     result->parent = NULL;
     result->child = NULL;
@@ -117,7 +126,7 @@ struct tag * new_tag() {
 }
 
 bool is_name_char(char c) {
-    return isalnum(c) || c == '$' || c == '@' || c == '-';
+    return isalnum(c) || c == '$' || c == '@' || c == '-' || c == '_';
 }
 
 char * read_id() {
@@ -146,6 +155,60 @@ char * read_class() {
 
 struct tag * parse();
 
+struct attr * clone_attr(struct attr attr) {
+    struct attr * cloned = (struct attr *)malloc(sizeof(struct attr));
+    /* TODO: NULL check */
+    assert(cloned != NULL);
+
+    memcpy(cloned, &attr, sizeof(struct attr));
+    return cloned;
+}
+
+void cat_attrs(struct attr * dest, const struct attr * src) {
+    assert(!strcmp(dest->name, src->name));
+
+    const size_t dest_len = strlen(dest->value);
+    const size_t src_len = strlen(src->value);
+    const size_t total_len = dest_len + src_len;
+
+    /* add 2 for NUL and space */
+    char * values = (char *)calloc(total_len + 2, sizeof(char));
+    /* TODO: NULL check */
+
+    strcat(values, dest->value);
+    strcat(values, " ");
+    strcat(values, src->value);
+
+    free(dest->value);
+    dest->value = values;
+}
+
+void add_attr(struct tag * tag, struct attr attr) {
+    assert(attr.name != NULL);
+    assert(attr.value != NULL);
+
+    if (tag->attrs == NULL) {
+        tag->attrs = clone_attr(attr);
+        return;
+    }
+
+    if (!strcmp(attr.name, tag->attrs->name)) {
+        cat_attrs(tag->attrs, &attr);
+        return;
+    }
+
+    struct attr * current = tag->attrs;
+
+    while (current->next != NULL && !strcmp(attr.name, current->next->name)) 
+        current = current->next;
+
+    if (current->next == NULL) {
+        current->next = clone_attr(attr);
+        return;
+    }
+    cat_attrs(current->next, &attr);
+}
+
 struct tag * read_tag() {
     if (peek() == '(') {
         advance();
@@ -164,14 +227,20 @@ struct tag * read_tag() {
     tag->name = (char *)calloc(name_length + 1, sizeof(char));
     strncpy(tag->name, &source[start], name_length);
 
-    if (peek() == '#') {
-        advance();
-        tag->id = read_id();
-    }
-    if (peek() == '.') {
-        advance();
-        tag->class = read_class();
-    }
+    for (;;)
+        if (peek() == '#') {
+            advance();
+
+            struct attr attr = { .name = "id", .value = NULL, .next = NULL };
+            attr.value = read_id();
+            add_attr(tag, attr);
+        } else if (peek() == '.') {
+            advance();
+
+            struct attr attr = { .name = "class", .value = NULL, .next = NULL };
+            attr.value = read_id();
+            add_attr(tag, attr);
+        } else break;
     
     /* TODO: id, other classes, attrs, etc */
     while (!is_operator(peek()) && peek() != '\0') advance();
@@ -201,10 +270,13 @@ void render(struct tag * tag, unsigned int level) {
     putchar('<');
     fputs(tag->name, stdout);
 
-    if (tag->id != NULL)
-        printf(" id=\"%s\"", tag->id);
-    if (tag->class != NULL)
-        printf(" class=\"%s\"", tag->class);
+    for (struct attr * attr = tag->attrs; attr != NULL; attr = attr->next) {
+        /* TODO: free them */
+        const char * name = expand_template(attr->name, tag->counter, tag->counter_max);
+        const char * value = expand_template(attr->value, tag->counter, tag->counter_max);
+
+        printf(" %s=\"%s\"", name, value);
+    }
 
     putchar('>');
 
@@ -226,8 +298,14 @@ void render(struct tag * tag, unsigned int level) {
 void clean(struct tag * tag) {
     if (tag->sibling == NULL || tag->name != tag->sibling->name) {
         free(tag->name);
-        free(tag->id);
-        free(tag->class);
+
+        struct attr * previous = NULL;
+
+        for (struct attr * attr = tag->attrs; attr != NULL; attr = attr->next) {
+            free(previous);
+            previous = attr;
+        }
+        free(previous);
     }
 
     if (tag->sibling != NULL) clean(tag->sibling);
@@ -257,7 +335,6 @@ struct tag * parse(void) {
             previous = previous->parent->sibling;
             break;
         case '*': {
-            /* TODO: max value */
             const unsigned int n = read_uint();
             struct tag * first = previous;
 
@@ -271,12 +348,9 @@ struct tag * parse(void) {
 
             struct tag * current = first;
 
-            /* TODO: same for id, text, attr, etc */
             for (unsigned int i = 1; i <= n; i++) {
-                if (current->class != NULL) {
-                    current->class = expand_template(current->class, i, n);
-                }
-
+                current->counter = i;
+                current->counter_max = n;
                 current = current->sibling;
             }
             } break;

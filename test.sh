@@ -53,6 +53,13 @@ tc 'section>(header>nav>ul>li)+footer>p' '
   </footer>
 </section>
 '
+tc 'ul.menu>li.menu__item+li#id_item+li.menu__item#id_2' '
+<ul class="menu">
+  <li class="menu__item"></li>
+  <li id="id_item"></li>
+  <li class="menu__item" id="id_2"></li>
+</ul>
+'
 tc 'ul>li*3' '
 <ul>
   <li></li>
@@ -132,5 +139,8 @@ tc 'a.item$@10*3' '
 <a class="item11"></a>
 <a class="item12"></a>
 '
+tc 'a.foo#bar' '<a class="foo" id="bar"></a>'
+tc 'a#foo.bar' '<a id="foo" class="bar"></a>'
+tc 'a.foo.bar' '<a class="foo bar"></a>'
 
 exit $ret
