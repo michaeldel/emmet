@@ -129,7 +129,7 @@ bool is_name_char(char c) {
     return isalnum(c) || c == '$' || c == '@' || c == '-' || c == '_';
 }
 
-char * read_id() {
+char * read_attr_value() {
     const size_t start = counter;
 
     while (is_name_char(peek())) advance();
@@ -232,13 +232,30 @@ struct tag * read_tag() {
             advance();
 
             struct attr attr = { .name = "id", .value = NULL, .next = NULL };
-            attr.value = read_id();
+            attr.value = read_attr_value();
             add_attr(tag, attr);
         } else if (peek() == '.') {
             advance();
 
             struct attr attr = { .name = "class", .value = NULL, .next = NULL };
-            attr.value = read_id();
+            attr.value = read_attr_value();
+            add_attr(tag, attr);
+        } else if (peek() == '[') {
+            advance();
+
+            struct attr attr = { .name = NULL, .value = NULL, .next = NULL };
+            attr.name = read_attr_value();
+
+            /* TODO: handle syntax error */
+            assert(advance() == '=');
+            assert(advance() == '"');
+
+            attr.value = read_attr_value();
+
+            /* TODO: handle syntax error */
+            assert(advance() == '"');
+            assert(advance() == ']');
+
             add_attr(tag, attr);
         } else break;
     

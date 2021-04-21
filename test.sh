@@ -60,6 +60,9 @@ tc 'ul.menu>li.menu__item+li#id_item+li.menu__item#id_2' '
   <li class="menu__item" id="id_2"></li>
 </ul>
 '
+tc 'input[type="text"]' '<input type="text"/>'
+tc 'div[data-attr="test"]' '<div data-attr="test"></div>'
+
 tc 'ul>li*3' '
 <ul>
   <li></li>
