@@ -8,6 +8,8 @@
 
 #include <sysexits.h>
 
+#include "constants.h"
+
 #define MAX_TAG_NAME_LEN 32
 #define MAX_TAG_ID_LEN 32
 #define MAX_TAG_CLASS 32
@@ -123,6 +125,15 @@ struct tag * new_tag() {
     result->sibling = NULL;
 
     return result;
+}
+
+bool is_selfclosing(const struct tag * tag) {
+    assert(tag->name != NULL);
+
+    for (size_t i = 0; i < sizeof selfclosing / sizeof(const char *); i++)
+        if (!strcmp(tag->name, selfclosing[i]))
+            return true;
+    return false;
 }
 
 bool is_name_char(char c) {
@@ -293,6 +304,11 @@ void render(struct tag * tag, unsigned int level) {
         const char * value = expand_template(attr->value, tag->counter, tag->counter_max);
 
         printf(" %s=\"%s\"", name, value);
+    }
+
+    if (is_selfclosing(tag)) {
+        puts("/>");
+        return;
     }
 
     putchar('>');
