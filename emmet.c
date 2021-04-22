@@ -354,6 +354,8 @@ void clean(struct tag * tag) {
         free(previous);
     }
 
+    free(tag->text);
+
     if (tag->sibling != NULL) clean(tag->sibling);
     if (tag->child != NULL) clean(tag->child);
 
