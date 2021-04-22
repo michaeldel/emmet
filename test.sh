@@ -144,6 +144,12 @@ tc 'a.item$@10*3' '
 <a class="item11"></a>
 <a class="item12"></a>
 '
+tc 'a{foo $}*3' '
+<a>foo 1</a>
+<a>foo 2</a>
+<a>foo 3</a>
+'
+
 tc 'a.foo#bar' '<a class="foo" id="bar"></a>'
 tc 'a#foo.bar' '<a id="foo" class="bar"></a>'
 tc 'a.foo.bar' '<a class="foo bar"></a>'
