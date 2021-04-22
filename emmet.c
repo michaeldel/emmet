@@ -99,6 +99,7 @@ struct attr {
 struct tag {
     char * name;
     struct attr * attrs;
+    char * text;
 
     unsigned int counter;
     unsigned int counter_max;
@@ -118,6 +119,8 @@ struct tag * new_tag() {
 
     result->name = NULL;
     result->attrs = NULL;
+    result->text = NULL;
+
     result->counter = 0;
 
     result->parent = NULL;
@@ -268,6 +271,11 @@ struct tag * read_tag() {
             assert(advance() == ']');
 
             add_attr(tag, attr);
+        } else if (peek() == '{') {
+            advance();
+            const size_t start = counter;
+            while(advance() != '}'); /* TODO: prevent infinite loop */
+            tag->text = strndup(&source[start], counter - start - 1);
         } else break;
     
     /* TODO: id, other classes, attrs, etc */
@@ -312,6 +320,11 @@ void render(struct tag * tag, unsigned int level) {
     }
 
     putchar('>');
+
+    if (tag->text != NULL) {
+        const char * text = expand_template(tag->text, tag->counter, tag->counter_max);
+        printf("%s", text);
+    }
 
     if (tag->child != NULL) {
         putchar('\n');
