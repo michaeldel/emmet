@@ -49,7 +49,7 @@ char * expand_template(char * template, unsigned int value, unsigned int max) {
 
     /* TODO: multiple templates in same string */
     char * pc = strstr(template, "$");
-    if (pc == NULL) return template;
+    if (pc == NULL) return strdup(template);
 
     char * pci = pc;
     while (*pci == '$') pci++;
@@ -122,6 +122,7 @@ struct tag * new_tag() {
     result->text = NULL;
 
     result->counter = 0;
+    result->counter_max = 0;
 
     result->parent = NULL;
     result->child = NULL;
@@ -147,12 +148,7 @@ char * read_attr_value() {
     const size_t start = counter;
 
     while (is_name_char(peek())) advance();
-
-    const size_t length = counter - start;
-    char * id = (char *)calloc(length + 1, sizeof(char));
-    strncpy(id, &source[start], length);
-
-    return id;
+    return strndup(&source[start], counter - start);
 }
 
 char * read_class() {
@@ -307,11 +303,13 @@ void render(struct tag * tag, unsigned int level) {
     fputs(tag->name, stdout);
 
     for (struct attr * attr = tag->attrs; attr != NULL; attr = attr->next) {
-        /* TODO: free them */
-        const char * name = expand_template(attr->name, tag->counter, tag->counter_max);
-        const char * value = expand_template(attr->value, tag->counter, tag->counter_max);
+        char * name = expand_template(attr->name, tag->counter, tag->counter_max);
+        char * value = expand_template(attr->value, tag->counter, tag->counter_max);
 
         printf(" %s=\"%s\"", name, value);
+
+        free(name);
+        free(value);
     }
 
     if (is_selfclosing(tag)) {
@@ -322,8 +320,9 @@ void render(struct tag * tag, unsigned int level) {
     putchar('>');
 
     if (tag->text != NULL) {
-        const char * text = expand_template(tag->text, tag->counter, tag->counter_max);
+        char * text = expand_template(tag->text, tag->counter, tag->counter_max);
         printf("%s", text);
+        free(text);
     }
 
     if (tag->child != NULL) {
@@ -348,6 +347,9 @@ void clean(struct tag * tag) {
         struct attr * previous = NULL;
 
         for (struct attr * attr = tag->attrs; attr != NULL; attr = attr->next) {
+            free(attr->name);
+            free(attr->value);
+
             free(previous);
             previous = attr;
         }

@@ -1,8 +1,17 @@
 #!/usr/bin/env bash
+EMMET=${EMMET:=./emmet}
+
 ret=0;
 
 tc() {
-    output=$(echo "$1" | ./emmet)
+    output=$(echo "$1" | $EMMET)
+
+    if [ $? -ne 0 ]; then
+        echo "ERROR $1"
+        ret=1
+        return
+    fi
+
     diff --color -u <(echo "$2" | sed -e '/^$/d') <(echo "$output") && echo "ok $1" || {
         echo "FAIL $1"
         ret=1
