@@ -271,7 +271,7 @@ struct tag * read_tag() {
             assert(advance() == ']');
 
             add_attr(tag, attr);
-        } else if (peek() == '{') {
+        } else if (peek() == '{') { /* TODO: self closing tag */
             advance();
             const size_t start = counter;
             while(advance() != '}'); /* TODO: prevent infinite loop */
