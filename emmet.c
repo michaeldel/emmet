@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <ctype.h>
+#include <errno.h>
 #include <limits.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -13,6 +14,11 @@
 #define MAX_TAG_NAME_LEN 32
 #define MAX_TAG_ID_LEN 32
 #define MAX_TAG_CLASS 32
+
+void die(const char * name) {
+    fprintf(stderr, "%s: %s\n", name, strerror(errno));
+    abort(); /* TODO: consider exit and cleanup */
+}
 
 size_t counter = 0;
 char source[BUFSIZ];
@@ -79,8 +85,8 @@ char * expand_template(char * template, unsigned int value, unsigned int max) {
     snprintf(formatted, sizeof(formatted), format, min - 1 + value);
 
     const size_t size = left_size + strlen(formatted) + right_size;
-    char * expanded = (char *)calloc(size, sizeof(char));
-    assert(expanded != NULL); /* TODO: proper check */
+    char * expanded = (char *) calloc(size, sizeof(char));
+    if (!expanded) die("calloc");
 
     strncat(expanded, template, left_size);
     strcat(expanded, formatted);
@@ -111,11 +117,7 @@ struct tag {
 
 struct tag * new_tag() {
     struct tag * result = (struct tag *) malloc(sizeof(struct tag));
-
-    if (result == NULL) {
-        perror("could not allocate new tag");
-        abort();
-    }
+    if (!result) die("malloc");
 
     result->name = NULL;
     result->attrs = NULL;
@@ -157,7 +159,10 @@ char * read_class() {
     while (is_name_char(peek())) advance();
 
     const size_t length = counter - start;
-    char * class = (char *)calloc(length, sizeof(char));
+
+    char * class = (char *) calloc(length, sizeof(char));
+    if (!class) die("calloc");
+
     strncpy(class, &source[start], length);
 
     return class;
@@ -166,9 +171,8 @@ char * read_class() {
 struct tag * parse();
 
 struct attr * clone_attr(struct attr attr) {
-    struct attr * cloned = (struct attr *)malloc(sizeof(struct attr));
-    /* TODO: NULL check */
-    assert(cloned != NULL);
+    struct attr * cloned = (struct attr *) malloc(sizeof(struct attr));
+    if (!cloned) die("malloc");
 
     memcpy(cloned, &attr, sizeof(struct attr));
     return cloned;
@@ -182,8 +186,8 @@ void cat_attrs(struct attr * dest, const struct attr * src) {
     const size_t total_len = dest_len + src_len;
 
     /* add 2 for NUL and space */
-    char * values = (char *)calloc(total_len + 2, sizeof(char));
-    /* TODO: NULL check */
+    char * values = (char *) calloc(total_len + 2, sizeof(char));
+    if (!values) die("calloc");
 
     strcat(values, dest->value);
     strcat(values, " ");
@@ -234,7 +238,9 @@ struct tag * read_tag() {
 
     const size_t name_length = counter - start;
     /* TODO: length == 0 */
-    tag->name = (char *)calloc(name_length + 1, sizeof(char));
+    tag->name = (char *) calloc(name_length + 1, sizeof(char));
+    if (!tag->name) die("calloc");
+
     strncpy(tag->name, &source[start], name_length);
 
     for (;;)
