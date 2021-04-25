@@ -130,6 +130,20 @@ tc 'ul>li.item$@3*5' '
 </ul>
 '
 
+# emmet.io documentation examples
+tc '#page>div.logo+ul#navigation>li*5>a{Item $}' '
+<div id="page">
+  <div class="logo"></div>
+  <ul id="navigation">
+    <li><a href="">Item 1</a></li>
+    <li><a href="">Item 2</a></li>
+    <li><a href="">Item 3</a></li>
+    <li><a href="">Item 4</a></li>
+    <li><a href="">Item 5</a></li>
+  </ul>
+</div>
+'
+
 tc 'a' '<a></a>'
 tc 'a>b' '
 <a>
@@ -172,6 +186,15 @@ tc 'a{foo $}*3' '
 <a>foo 1</a>
 <a>foo 2</a>
 <a>foo 3</a>
+'
+
+tc 'a*2>b{item$}' '
+<a>
+  <b>item1</b>
+</a>
+<a>
+  <b>item2</b>
+</a>
 '
 
 tc 'a.foo#bar' '<a class="foo" id="bar"></a>'

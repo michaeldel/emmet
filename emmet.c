@@ -115,7 +115,6 @@ struct tag {
     char * text;
 
     unsigned int counter;
-    unsigned int counter_max;
 
     struct tag * parent;
     struct tag * child;
@@ -130,8 +129,7 @@ struct tag * new_tag() {
     result->attrs = NULL;
     result->text = NULL;
 
-    result->counter = 0;
-    result->counter_max = 0;
+    result->counter = 1;
 
     result->parent = NULL;
     result->child = NULL;
@@ -151,7 +149,7 @@ bool is_selfclosing(const struct tag * tag) {
 
 struct tag * parse();
 
-unsigned int read_uint() {
+unsigned int readuint() {
     const size_t start = counter;
     while (isdigit(peek())) advance();
     const long result = strtol(&source[start], NULL, 10);
@@ -315,48 +313,50 @@ struct tag * readtag(struct tag * parent) {
 }
 
 void render(struct tag * tag, unsigned int level) {
-    indent(level);
+    for (unsigned int i = 1; i <= tag->counter; i++) {
+        indent(level);
 
-    putchar('<');
-    fputs(tag->name, stdout);
+        putchar('<');
+        fputs(tag->name, stdout);
 
-    for (struct attr * attr = tag->attrs; attr != NULL; attr = attr->next) {
-        char * name = expand_template(attr->name, tag->counter, tag->counter_max);
-        char * value = expand_template(attr->value, tag->counter, tag->counter_max);
+        for (struct attr * attr = tag->attrs; attr != NULL; attr = attr->next) {
+            char * name = expand_template(attr->name, i, tag->counter);
+            char * value = expand_template(attr->value, i, tag->counter);
 
-        printf(" %s=\"%s\"", name, value);
+            printf(" %s=\"%s\"", name, value);
 
-        free(name);
-        free(value);
-    }
-
-    if (is_selfclosing(tag)) {
-        puts("/>");
-        return;
-    }
-
-    putchar('>');
-
-    if (tag->text != NULL) {
-        char * text = expand_template(tag->text, tag->counter, tag->counter_max);
-        printf("%s", text);
-        free(text);
-    }
-
-    if (tag->child != NULL) {
-        if (isinline(tag->child->name)) {
-            render(tag->child, 0);
-        } else {
-            putchar('\n');
-            render(tag->child, level + 1);
-            indent(level);
+            free(name);
+            free(value);
         }
+
+        if (is_selfclosing(tag)) {
+            puts("/>");
+            return;
+        }
+
+        putchar('>');
+
+        if (tag->text != NULL) {
+            char * text = expand_template(tag->text, i, tag->counter);
+            printf("%s", text);
+            free(text);
+        }
+
+        if (tag->child != NULL) {
+            if (isinline(tag->child->name)) {
+                render(tag->child, 0);
+            } else {
+                putchar('\n');
+                render(tag->child, level + 1);
+                indent(level);
+            }
+        }
+
+        printf("</%s>", tag->name);
+
+        if (!isinline(tag->name)) putchar('\n');
+        if (tag->sibling != NULL) render(tag->sibling, level);
     }
-
-    printf("</%s>", tag->name);
-
-    if (!isinline(tag->name)) putchar('\n');
-    if (tag->sibling != NULL) render(tag->sibling, level);
 }
 
 void clean(struct tag * tag) {
@@ -405,26 +405,9 @@ struct tag * parse(void) {
             previous->parent->sibling = readtag(previous->parent->parent);
             previous = previous->parent->sibling;
             break;
-        case '*': {
-            const unsigned int n = read_uint();
-            struct tag * first = previous;
-
-            for (unsigned int i = 1; i < n; i++) {
-                struct tag * cloned = new_tag();
-                memcpy(cloned, previous, sizeof(struct tag));
-
-                previous->sibling = cloned;
-                previous = previous->sibling;
-            }
-
-            struct tag * current = first;
-
-            for (unsigned int i = 1; i <= n; i++) {
-                current->counter = i;
-                current->counter_max = n;
-                current = current->sibling;
-            }
-            } break;
+        case '*': 
+            previous->counter = readuint();
+            break;
         case ')':
             return root;
         case '\n':
