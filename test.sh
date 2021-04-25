@@ -175,6 +175,7 @@ tc sgml 'a>(b>c)+d' '
   <d></d>
 </a>
 '
+tc sgml 'a*0' '<a></a>'
 tc sgml 'a.item$*10' '
 <a class="item1"></a>
 <a class="item2"></a>
@@ -204,6 +205,21 @@ tc sgml 'a*2>b{item$}' '
 </a>
 <a>
   <b>item2</b>
+</a>
+'
+tc sgml 'a*2+b' '
+<a></a>
+<a></a>
+<b></b>
+'
+tc sgml 'a*2>b+c' '
+<a>
+  <b></b>
+  <c></c>
+</a>
+<a>
+  <b></b>
+  <c></c>
 </a>
 '
 

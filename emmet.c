@@ -12,6 +12,8 @@
 
 #include "config.h"
 
+#define MAX(a, b) ((a) > (b) ? (a) : (b))
+
 #define MAX_TAG_NAME_LEN 32
 #define MAX_TAG_ID_LEN 32
 #define MAX_TAG_CLASS 32
@@ -137,7 +139,7 @@ struct tag * new_tag() {
     result->attrs = NULL;
     result->text = NULL;
 
-    result->counter = 1;
+    result->counter = 0;
 
     result->parent = NULL;
     result->child = NULL;
@@ -320,16 +322,18 @@ struct tag * readtag(struct tag * parent) {
     return tag;
 }
 
-void render(struct tag * tag, unsigned int level) {
-    for (unsigned int i = 1; i <= tag->counter; i++) {
+void render(struct tag * tag, unsigned int level, unsigned int initcounter) {
+    const unsigned int max_counter = MAX(initcounter, tag->counter);
+
+    for (unsigned int i = initcounter; i <= max_counter; i++) {
         indent(level);
 
         putchar('<');
         fputs(tag->name, stdout);
 
         for (struct attr * attr = tag->attrs; attr != NULL; attr = attr->next) {
-            char * name = expand_template(attr->name, i, tag->counter);
-            char * value = expand_template(attr->value, i, tag->counter);
+            char * name = expand_template(attr->name, i, max_counter);
+            char * value = expand_template(attr->value, i, max_counter);
 
             printf(" %s=\"%s\"", name, value);
 
@@ -345,17 +349,17 @@ void render(struct tag * tag, unsigned int level) {
         putchar('>');
 
         if (tag->text != NULL) {
-            char * text = expand_template(tag->text, i, tag->counter);
+            char * text = expand_template(tag->text, i, max_counter);
             printf("%s", text);
             free(text);
         }
 
         if (tag->child != NULL) {
             if (isinline(tag->child->name) && mode == HTML) {
-                render(tag->child, 0);
+                render(tag->child, 0, i);
             } else {
                 putchar('\n');
-                render(tag->child, level + 1);
+                render(tag->child, level + 1, i);
                 indent(level);
             }
         }
@@ -363,8 +367,9 @@ void render(struct tag * tag, unsigned int level) {
         printf("</%s>", tag->name);
 
         if (!isinline(tag->name) || mode != HTML) putchar('\n');
-        if (tag->sibling != NULL) render(tag->sibling, level);
     }
+
+    if (tag->sibling != NULL) render(tag->sibling, level, initcounter);
 }
 
 void clean(struct tag * tag) {
@@ -450,7 +455,7 @@ int main(int argc, char * argv[]) {
     assert(err != NULL);
 
     struct tag * tree = parse();    
-    render(tree, 0);
+    render(tree, 0, 1);
     clean(tree);
 
     return EXIT_SUCCESS;
