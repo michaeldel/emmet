@@ -1,3 +1,0 @@
-const char * selfclosing[] = {
-    "input",
-};

@@ -9,7 +9,7 @@
 
 #include <sysexits.h>
 
-#include "constants.h"
+#include "config.h"
 
 #define MAX_TAG_NAME_LEN 32
 #define MAX_TAG_ID_LEN 32
@@ -143,8 +143,8 @@ struct tag * new_tag() {
 bool is_selfclosing(const struct tag * tag) {
     assert(tag->name != NULL);
 
-    for (size_t i = 0; i < sizeof selfclosing / sizeof(const char *); i++)
-        if (!strcmp(tag->name, selfclosing[i]))
+    for (size_t i = 0; i < sizeof SELFCLOSINGS / sizeof(const char *); i++)
+        if (!strcmp(tag->name, SELFCLOSINGS[i]))
             return true;
     return false;
 }
@@ -339,8 +339,6 @@ char * readtext() {
 
     return strndup(&source[start], counter - start - 1);
 }
-
-const char * INLINES[] = {"em"};
 
 bool isinline(const char * name) {
     for (size_t i = 0; i < sizeof INLINES / sizeof(char *); i++)
