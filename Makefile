@@ -19,4 +19,4 @@ fullmemcheck: emmet
 clean:
 	rm -f emmet
 
-.PHONY: clean runtests
+.PHONY: clean fullmemcheck memcheck runtests
