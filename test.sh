@@ -74,6 +74,21 @@ tc 'div[data-attr="test"]' '<div data-attr="test"></div>'
 
 tc 'p{Lorem ipsum}' '<p>Lorem ipsum</p>'
 
+tc '.default-block' '<div class="default-block"></div>'
+tc 'em>.default-inline' '<em><span class="default-inline"></span></em>'
+tc 'ul>.default-list' '
+<ul>
+  <li class="default-list"></li>
+</ul>
+'
+tc 'table>.default-table-row>.default-table-column' '
+<table>
+  <tr class="default-table-row">
+    <td class="default-table-column"></td>
+  </tr>
+</table>
+'
+
 tc 'ul>li*3' '
 <ul>
   <li></li>

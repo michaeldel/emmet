@@ -189,6 +189,8 @@ void render(struct tag * tag, unsigned int level) {
     }
 
     putchar('>');
+    
+    /* TODO: inline tags */
 
     if (tag->text != NULL) {
         char * text = expand_template(tag->text, tag->counter, tag->counter_max);
@@ -243,9 +245,11 @@ bool isnamechar(char c) {
 }
 
 char * readname() {
-    /* TODO: enforce length != 0 */
+    /* returns NULL if name empty */
     const size_t start = counter;
     while (isnamechar(peek())) advance();
+
+    if (counter == start) return NULL;
     return strndup(&source[start], counter - start);
 }
 
@@ -336,15 +340,37 @@ char * readtext() {
     return strndup(&source[start], counter - start - 1);
 }
 
-struct tag * readtag(void) {
+const char * INLINES[] = {"em"};
+
+bool isinline(const char * name) {
+    for (size_t i = 0; i < sizeof INLINES / sizeof(char *); i++)
+        if (!strcmp(name, INLINES[i])) return true;
+    return false;
+}
+
+const char * defaultname(const struct tag * parent) {
+    if (!parent) return "div";
+    if (!strcmp(parent->name, "ul")) return "li";
+    if (!strcmp(parent->name, "ol")) return "li";
+    if (!strcmp(parent->name, "table")) return "tr";
+    if (!strcmp(parent->name, "tr")) return "td";
+
+    if (isinline(parent->name)) return "span";
+    return "div";
+}
+
+struct tag * readtag(struct tag * parent) {
     if (peek() == '(') {
         advance();
         return parse();
     }
 
     struct tag * tag = new_tag();
+    tag->parent = parent;
 
     tag->name = readname();
+    if (!tag->name) tag->name = strdup(defaultname(parent));
+
     tag->attrs = readattrs(); /* left attrs */
     tag->text = readtext();
 
@@ -364,23 +390,22 @@ struct tag * readtag(void) {
 }
 
 struct tag * parse(void) {
-    struct tag * root = readtag();
+    struct tag * root = readtag(NULL);
     struct tag * previous = root;
 
     for (;;)  {
         const char op = advance();
         switch(op) {
         case '>':
-            previous->child = readtag();
-            previous->child->parent = previous;
+            previous->child = readtag(previous);
             previous = previous->child;
             break;
         case '+':
-            previous->sibling = readtag();
+            previous->sibling = readtag(previous->parent);
             previous = previous->sibling;
             break;
         case '^':
-            previous->parent->sibling = readtag();
+            previous->parent->sibling = readtag(previous->parent->parent);
             previous = previous->parent->sibling;
             break;
         case '*': {
