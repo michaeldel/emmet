@@ -167,79 +167,6 @@ void indent(unsigned int level) {
         printf("  ");
 }
 
-void render(struct tag * tag, unsigned int level) {
-    indent(level);
-
-    putchar('<');
-    fputs(tag->name, stdout);
-
-    for (struct attr * attr = tag->attrs; attr != NULL; attr = attr->next) {
-        char * name = expand_template(attr->name, tag->counter, tag->counter_max);
-        char * value = expand_template(attr->value, tag->counter, tag->counter_max);
-
-        printf(" %s=\"%s\"", name, value);
-
-        free(name);
-        free(value);
-    }
-
-    if (is_selfclosing(tag)) {
-        puts("/>");
-        return;
-    }
-
-    putchar('>');
-    
-    /* TODO: inline tags */
-
-    if (tag->text != NULL) {
-        char * text = expand_template(tag->text, tag->counter, tag->counter_max);
-        printf("%s", text);
-        free(text);
-    }
-
-    if (tag->child != NULL) {
-        putchar('\n');
-        render(tag->child, level + 1);
-        indent(level);
-    }
-
-    fputs("</", stdout);
-    fputs(tag->name, stdout);
-    fputs(">\n", stdout);
-
-    if (tag->sibling != NULL) {
-        render(tag->sibling, level);
-    }
-}
-
-void clean(struct tag * tag) {
-    /* TODO: re-enable cleanup */
-    return;
-
-    if (tag->sibling == NULL || tag->name != tag->sibling->name) {
-        free(tag->name);
-
-        struct attr * previous = NULL;
-
-        for (struct attr * attr = tag->attrs; attr != NULL; attr = attr->next) {
-            free(attr->name);
-            free(attr->value);
-
-            free(previous);
-            previous = attr;
-        }
-        free(previous);
-    }
-
-    free(tag->text);
-
-    if (tag->sibling != NULL) clean(tag->sibling);
-    if (tag->child != NULL) clean(tag->child);
-
-    free(tag);
-}
-
 bool isnamechar(char c) {
     return isalnum(c) || c == '_' || c == '-';
 }
@@ -385,6 +312,78 @@ struct tag * readtag(struct tag * parent) {
     mergeattrs(tag->attrs);
 
     return tag;
+}
+
+void render(struct tag * tag, unsigned int level) {
+    indent(level);
+
+    putchar('<');
+    fputs(tag->name, stdout);
+
+    for (struct attr * attr = tag->attrs; attr != NULL; attr = attr->next) {
+        char * name = expand_template(attr->name, tag->counter, tag->counter_max);
+        char * value = expand_template(attr->value, tag->counter, tag->counter_max);
+
+        printf(" %s=\"%s\"", name, value);
+
+        free(name);
+        free(value);
+    }
+
+    if (is_selfclosing(tag)) {
+        puts("/>");
+        return;
+    }
+
+    putchar('>');
+
+    if (tag->text != NULL) {
+        char * text = expand_template(tag->text, tag->counter, tag->counter_max);
+        printf("%s", text);
+        free(text);
+    }
+
+    if (tag->child != NULL) {
+        if (isinline(tag->child->name)) {
+            render(tag->child, 0);
+        } else {
+            putchar('\n');
+            render(tag->child, level + 1);
+            indent(level);
+        }
+    }
+
+    printf("</%s>", tag->name);
+
+    if (!isinline(tag->name)) putchar('\n');
+    if (tag->sibling != NULL) render(tag->sibling, level);
+}
+
+void clean(struct tag * tag) {
+    /* TODO: re-enable cleanup */
+    return;
+
+    if (tag->sibling == NULL || tag->name != tag->sibling->name) {
+        free(tag->name);
+
+        struct attr * previous = NULL;
+
+        for (struct attr * attr = tag->attrs; attr != NULL; attr = attr->next) {
+            free(attr->name);
+            free(attr->value);
+
+            free(previous);
+            previous = attr;
+        }
+        free(previous);
+    }
+
+    free(tag->text);
+
+    if (tag->sibling != NULL) clean(tag->sibling);
+    if (tag->child != NULL) clean(tag->child);
+
+    free(tag);
 }
 
 struct tag * parse(void) {
