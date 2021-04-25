@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <unistd.h>
 #include <sysexits.h>
 
 #include "config.h"
@@ -40,6 +41,13 @@ void consume(char c) {
         /* TODO: handle edge cases */
     }
 }
+
+enum mode {
+    HTML,
+    SGML,
+};
+
+enum mode mode = HTML;
 
 char * expand_template(char * template, unsigned int value, unsigned int max) {
     /* TODO: properly refactor whole function */
@@ -343,7 +351,7 @@ void render(struct tag * tag, unsigned int level) {
         }
 
         if (tag->child != NULL) {
-            if (isinline(tag->child->name)) {
+            if (isinline(tag->child->name) && mode == HTML) {
                 render(tag->child, 0);
             } else {
                 putchar('\n');
@@ -354,7 +362,7 @@ void render(struct tag * tag, unsigned int level) {
 
         printf("</%s>", tag->name);
 
-        if (!isinline(tag->name)) putchar('\n');
+        if (!isinline(tag->name) || mode != HTML) putchar('\n');
         if (tag->sibling != NULL) render(tag->sibling, level);
     }
 }
@@ -421,7 +429,22 @@ struct tag * parse(void) {
     }
 }
 
-int main(void) {
+int main(int argc, char * argv[]) {
+    int opt;
+    while ((opt = getopt(argc, argv, "m:")) != -1)
+        switch (opt) {
+        case 'm':
+            if (!strcmp(optarg, "html")) mode = HTML;
+            else if (!strcmp(optarg, "sgml")) mode = SGML;
+            else {
+                fprintf(stderr, "Invalid mode, available modes are: html, sgml");
+                exit(EX_USAGE);
+            }
+            break;
+        default:
+            break;
+        }
+
     /* TODO: handle other lengths */
     char * err = fgets(source, BUFSIZ, stdin);
     assert(err != NULL);

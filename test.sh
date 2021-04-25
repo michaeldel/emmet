@@ -1,10 +1,19 @@
 #!/usr/bin/env bash
+set -o nounset
+
 EMMET=${EMMET:=./emmet}
 
 ret=0;
 
 tc() {
-    output=$(echo "$1" | $EMMET)
+    if [ $# -eq 3 ]; then
+        opts="-m $1"
+        shift
+    else
+        opts=""
+    fi
+
+    output=$(echo "$1" | $EMMET $opts)
 
     if [ $? -ne 0 ]; then
         echo "ERROR $1"
@@ -144,20 +153,21 @@ tc '#page>div.logo+ul#navigation>li*5>a{Item $}' '
 </div>
 '
 
-tc 'a' '<a></a>'
-tc 'a>b' '
+# simple SGML examples
+tc sgml 'a' '<a></a>'
+tc sgml 'a>b' '
 <a>
   <b></b>
 </a>
 '
-tc 'a>b>c' '
+tc sgml 'a>b>c' '
 <a>
   <b>
     <c></c>
   </b>
 </a>
 '
-tc 'a>(b>c)+d' '
+tc sgml 'a>(b>c)+d' '
 <a>
   <b>
     <c></c>
@@ -165,7 +175,7 @@ tc 'a>(b>c)+d' '
   <d></d>
 </a>
 '
-tc 'a.item$*10' '
+tc sgml 'a.item$*10' '
 <a class="item1"></a>
 <a class="item2"></a>
 <a class="item3"></a>
@@ -177,18 +187,18 @@ tc 'a.item$*10' '
 <a class="item9"></a>
 <a class="item10"></a>
 '
-tc 'a.item$@10*3' '
+tc sgml 'a.item$@10*3' '
 <a class="item10"></a>
 <a class="item11"></a>
 <a class="item12"></a>
 '
-tc 'a{foo $}*3' '
+tc sgml 'a{foo $}*3' '
 <a>foo 1</a>
 <a>foo 2</a>
 <a>foo 3</a>
 '
 
-tc 'a*2>b{item$}' '
+tc sgml 'a*2>b{item$}' '
 <a>
   <b>item1</b>
 </a>
@@ -197,9 +207,9 @@ tc 'a*2>b{item$}' '
 </a>
 '
 
-tc 'a.foo#bar' '<a class="foo" id="bar"></a>'
-tc 'a#foo.bar' '<a id="foo" class="bar"></a>'
-tc 'a.foo.bar' '<a class="foo bar"></a>'
-tc 'a.foo.bar.baz' '<a class="foo bar baz"></a>'
+tc sgml 'a.foo#bar' '<a class="foo" id="bar"></a>'
+tc sgml 'a#foo.bar' '<a id="foo" class="bar"></a>'
+tc sgml 'a.foo.bar' '<a class="foo bar"></a>'
+tc sgml 'a.foo.bar.baz' '<a class="foo bar baz"></a>'
 
 exit $ret
