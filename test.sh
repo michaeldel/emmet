@@ -162,5 +162,6 @@ tc 'a{foo $}*3' '
 tc 'a.foo#bar' '<a class="foo" id="bar"></a>'
 tc 'a#foo.bar' '<a id="foo" class="bar"></a>'
 tc 'a.foo.bar' '<a class="foo bar"></a>'
+tc 'a.foo.bar.baz' '<a class="foo bar baz"></a>'
 
 exit $ret

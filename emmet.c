@@ -31,23 +31,15 @@ char peek() {
     return counter == BUFSIZ ? '\0' : source[counter];
 }
 
-bool is_operator(char c) {
-    return (
-        c == '>' || c == '+' || c == '^' || c == '*' || c == ')'
-    );
+void consume(char c) {
+    for (;;) {
+        const char current = advance();
+
+        if (current == c) return;
+        if (current == '\0') die("syntax error"); /* TODO: better message */
+        /* TODO: handle edge cases */
+    }
 }
-
-struct placeholder {
-    const char * begin;
-    const char * end;
-
-    const bool reverse;
-    const unsigned int start_value;
-};
-
-struct template {
-    const char * source;
-};
 
 char * expand_template(char * template, unsigned int value, unsigned int max) {
     /* TODO: properly refactor whole function */
@@ -102,6 +94,21 @@ struct attr {
     struct attr * next;
 };
 
+struct attr * mkattr(const char * name, const char * value) {
+    struct attr * attr = (struct attr *) malloc(sizeof(struct attr));
+    if (!attr) die("mkattr: malloc attr");
+
+    attr->name = strdup(name);
+    if (!attr->name) die("mkattr: strdup name");
+
+    attr->value = strdup(value);
+    if (!attr->value) die("mkattr: strdup value");
+
+    attr->next = NULL;
+
+    return attr;     
+}
+
 struct tag {
     char * name;
     struct attr * attrs;
@@ -142,149 +149,7 @@ bool is_selfclosing(const struct tag * tag) {
     return false;
 }
 
-bool is_name_char(char c) {
-    return isalnum(c) || c == '$' || c == '@' || c == '-' || c == '_';
-}
-
-char * read_attr_value() {
-    const size_t start = counter;
-
-    while (is_name_char(peek())) advance();
-    return strndup(&source[start], counter - start);
-}
-
-char * read_class() {
-    const size_t start = counter;
-
-    while (is_name_char(peek())) advance();
-
-    const size_t length = counter - start;
-
-    char * class = (char *) calloc(length, sizeof(char));
-    if (!class) die("calloc");
-
-    strncpy(class, &source[start], length);
-
-    return class;
-}
-
 struct tag * parse();
-
-struct attr * clone_attr(struct attr attr) {
-    struct attr * cloned = (struct attr *) malloc(sizeof(struct attr));
-    if (!cloned) die("malloc");
-
-    memcpy(cloned, &attr, sizeof(struct attr));
-    return cloned;
-}
-
-void cat_attrs(struct attr * dest, const struct attr * src) {
-    assert(!strcmp(dest->name, src->name));
-
-    const size_t dest_len = strlen(dest->value);
-    const size_t src_len = strlen(src->value);
-    const size_t total_len = dest_len + src_len;
-
-    /* add 2 for NUL and space */
-    char * values = (char *) calloc(total_len + 2, sizeof(char));
-    if (!values) die("calloc");
-
-    strcat(values, dest->value);
-    strcat(values, " ");
-    strcat(values, src->value);
-
-    free(dest->value);
-    dest->value = values;
-}
-
-void add_attr(struct tag * tag, struct attr attr) {
-    assert(attr.name != NULL);
-    assert(attr.value != NULL);
-
-    if (tag->attrs == NULL) {
-        tag->attrs = clone_attr(attr);
-        return;
-    }
-
-    if (!strcmp(attr.name, tag->attrs->name)) {
-        cat_attrs(tag->attrs, &attr);
-        return;
-    }
-
-    struct attr * current = tag->attrs;
-
-    while (current->next != NULL && !strcmp(attr.name, current->next->name)) 
-        current = current->next;
-
-    if (current->next == NULL) {
-        current->next = clone_attr(attr);
-        return;
-    }
-    cat_attrs(current->next, &attr);
-}
-
-struct tag * read_tag() {
-    if (peek() == '(') {
-        advance();
-        return parse();
-    }
-
-    struct tag * tag = new_tag();
-    assert(tag != NULL);
-
-    const size_t start = counter;
-
-    while (isalnum(peek())) advance();
-
-    const size_t name_length = counter - start;
-    /* TODO: length == 0 */
-    tag->name = (char *) calloc(name_length + 1, sizeof(char));
-    if (!tag->name) die("calloc");
-
-    strncpy(tag->name, &source[start], name_length);
-
-    for (;;)
-        if (peek() == '#') {
-            advance();
-
-            struct attr attr = { .name = "id", .value = NULL, .next = NULL };
-            attr.value = read_attr_value();
-            add_attr(tag, attr);
-        } else if (peek() == '.') {
-            advance();
-
-            struct attr attr = { .name = "class", .value = NULL, .next = NULL };
-            attr.value = read_attr_value();
-            add_attr(tag, attr);
-        } else if (peek() == '[') {
-            advance();
-
-            struct attr attr = { .name = NULL, .value = NULL, .next = NULL };
-            attr.name = read_attr_value();
-
-            /* TODO: handle syntax error */
-            assert(advance() == '=');
-            assert(advance() == '"');
-
-            attr.value = read_attr_value();
-
-            /* TODO: handle syntax error */
-            assert(advance() == '"');
-            assert(advance() == ']');
-
-            add_attr(tag, attr);
-        } else if (peek() == '{') { /* TODO: self closing tag */
-            advance();
-            const size_t start = counter;
-            while(advance() != '}'); /* TODO: prevent infinite loop */
-            tag->text = strndup(&source[start], counter - start - 1);
-        } else break;
-    
-    /* TODO: id, other classes, attrs, etc */
-    while (!is_operator(peek()) && peek() != '\0') advance();
-
-    return tag;
-}
 
 unsigned int read_uint() {
     const size_t start = counter;
@@ -347,6 +212,9 @@ void render(struct tag * tag, unsigned int level) {
 }
 
 void clean(struct tag * tag) {
+    /* TODO: re-enable cleanup */
+    return;
+
     if (tag->sibling == NULL || tag->name != tag->sibling->name) {
         free(tag->name);
 
@@ -370,24 +238,149 @@ void clean(struct tag * tag) {
     free(tag);
 }
 
+bool isnamechar(char c) {
+    return isalnum(c) || c == '_' || c == '-';
+}
+
+char * readname() {
+    /* TODO: enforce length != 0 */
+    const size_t start = counter;
+    while (isnamechar(peek())) advance();
+    return strndup(&source[start], counter - start);
+}
+
+bool isvaluechar(char c) {
+    return isalnum(c) || c == '_' || c == '-' || c == '$' || c == '@';
+}
+
+char * readvalue() {
+    const size_t start = counter;
+    while (isvaluechar(peek())) advance();
+    return strndup(&source[start], counter - start);
+}
+
+void mergeattrs(struct attr * attrs) {
+    struct attr * parent = NULL;
+
+    for (struct attr * attr = attrs; attr; parent = attr, attr = attr->next)
+        for (struct attr * prev = attrs; prev != attr; prev = prev->next)
+            if (!strcmp(prev->name, attr->name)) {
+                /* TODO: prevent using too many mallocs */
+                /* TODO: prevent memory leaks */
+                prev->value = strcat(prev->value, " ");
+                prev->value = strcat(prev->value, attr->value);
+
+                parent->next = attr->next;
+
+                free(attr->name);
+                free(attr->value);
+                free(attr);
+
+                if (!parent->next) return;
+
+                attr = parent;
+                break;
+            }
+}
+
+struct attr * readattr(void) {
+    switch (advance()) {
+    case '#': return mkattr("id", readvalue());
+    case '.': return mkattr("class", readvalue());
+    case '[': {
+        char * name = readname();
+        consume('=');
+
+        consume('"');
+        char * value = readvalue();
+        consume('"');
+
+        consume(']');
+
+        struct attr * result = mkattr(name, value);
+        free(name);
+        free(value);
+
+        return result;
+    }
+    default: return NULL;
+    }
+}
+
+bool contains(const char container[], size_t size, char candidate) {
+    for (size_t i = 0; i < size; i++)
+        if (container[i] == candidate)
+            return true;
+    return false;
+}
+
+struct attr * readattrs() {
+    const char prefixes[] = {'#', '.', '['};
+
+    if (!contains(prefixes, sizeof prefixes / sizeof(char), peek()))
+        return NULL;
+
+    struct attr * attr = readattr();
+    attr->next = readattrs();
+
+    return attr;
+}
+
+char * readtext() {
+    if (peek() != '{') return strdup("");
+
+    advance();
+    const size_t start = counter;
+    consume('}');
+
+    return strndup(&source[start], counter - start - 1);
+}
+
+struct tag * readtag(void) {
+    if (peek() == '(') {
+        advance();
+        return parse();
+    }
+
+    struct tag * tag = new_tag();
+
+    tag->name = readname();
+    tag->attrs = readattrs(); /* left attrs */
+    tag->text = readtext();
+
+    if (tag->attrs) {
+        struct attr * last = NULL;
+        for (struct attr * attr = tag->attrs; attr; attr = attr->next)
+            last = attr;
+
+        last->next = readattrs(); /* right attrs */
+    } else {
+        tag->attrs = readattrs();
+    }
+
+    mergeattrs(tag->attrs);
+
+    return tag;
+}
+
 struct tag * parse(void) {
-    struct tag * root = read_tag();
+    struct tag * root = readtag();
     struct tag * previous = root;
 
     for (;;)  {
         const char op = advance();
         switch(op) {
         case '>':
-            previous->child = read_tag();
+            previous->child = readtag();
             previous->child->parent = previous;
             previous = previous->child;
             break;
         case '+':
-            previous->sibling = read_tag();
+            previous->sibling = readtag();
             previous = previous->sibling;
             break;
         case '^':
-            previous->parent->sibling = read_tag();
+            previous->parent->sibling = readtag();
             previous = previous->parent->sibling;
             break;
         case '*': {
