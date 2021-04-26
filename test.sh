@@ -153,6 +153,140 @@ tc '#page>div.logo+ul#navigation>li*5>a{Item $}' '
 </div>
 '
 
+tc 'div>ul>li' '
+<div>
+  <ul>
+    <li></li>
+  </ul>
+</div>
+'
+tc 'div+p+bq' '
+<div></div>
+<p></p>
+<blockquote></blockquote>
+'
+tc 'div+div>p>span+em' '
+<div></div>
+<div>
+  <p><span></span><em></em></p>
+</div>
+'
+tc 'div+div>p>span+em^bq' '
+<div></div>
+<div>
+  <p><span></span><em></em></p>
+  <blockquote></blockquote>
+</div>
+'
+tc 'div+div>p>span+em^^^bq' '
+<div></div>
+<div>
+  <p><span></span><em></em></p>
+</div>
+<blockquote></blockquote>
+'
+tc 'ul>li*5' '
+<ul>
+  <li></li>
+  <li></li>
+  <li></li>
+  <li></li>
+  <li></li>
+</ul>
+'
+tc 'div>(header>ul>li*2>a)+footer>p' '
+<div>
+  <header>
+    <ul>
+      <li><a href=""></a></li>
+      <li><a href=""></a></li>
+    </ul>
+  </header>
+  <footer>
+    <p></p>
+  </footer>
+</div>
+'
+tc '(div>dl>(dt+dd)*3)+footer>p' '
+<div>
+  <dl>
+    <dt></dt>
+    <dd></dd>
+    <dt></dt>
+    <dd></dd>
+    <dt></dt>
+    <dd></dd>
+  </dl>
+</div>
+<footer>
+  <p></p>
+</footer>
+'
+tc 'div#header+div.page+div#footer.class1.class2.class3' '
+<div id="header"></div>
+<div class="page"></div>
+<div id="footer" class="class1 class2 class3"></div>
+'
+tc 'td[title="Hello world!" colspan=3]' '
+<td title="Hello world!" colspan="3"></td>
+'
+tc 'ul>li.item$*5' '
+<ul>
+  <li class="item1"></li>
+  <li class="item2"></li>
+  <li class="item3"></li>
+  <li class="item4"></li>
+  <li class="item5"></li>
+</ul>
+'
+tc 'ul>li.item$$$*5' '
+<ul>
+  <li class="item001"></li>
+  <li class="item002"></li>
+  <li class="item003"></li>
+  <li class="item004"></li>
+  <li class="item005"></li>
+</ul>
+'
+tc 'ul>li.item$@-*5' '
+<ul>
+  <li class="item5"></li>
+  <li class="item4"></li>
+  <li class="item3"></li>
+  <li class="item2"></li>
+  <li class="item1"></li>
+</ul>
+'
+tc 'ul>li.item$@3*5' '
+<ul>
+  <li class="item3"></li>
+  <li class="item4"></li>
+  <li class="item5"></li>
+  <li class="item6"></li>
+  <li class="item7"></li>
+</ul>
+'
+tc 'ul>li.item$@-3*5' '
+<ul>
+  <li class="item7"></li>
+  <li class="item6"></li>
+  <li class="item5"></li>
+  <li class="item4"></li>
+  <li class="item3"></li>
+</ul>
+'
+tc 'a{Click me}' '<a href="">Click me</a>'
+tc 'a>{Click me}' '<a href="">Click me</a>'
+tc 'a{click}+b{here}' '<a href="">click</a><b>here</b>'
+tc 'a>{click}+b{here}' '<a href="">click<b>here</b></a>'
+tc 'p>{Click }+a{here}+{ to continue}' '
+<p>Click <a href="">here</a> to continue</p>
+'
+tc 'p{Click }+a{here}+{ to continue}' '
+<p>Click </p>
+<a href="">here</a> to continue
+'
+
 # details
 tc 'a#foo' '<a href="" id="foo"></a>'
 
