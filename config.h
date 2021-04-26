@@ -6,3 +6,7 @@ const char * INLINES[] = {
 const char * SELFCLOSINGS[] = {
     "input",
 };
+
+const char * DEFAULTATTRS[][2] = {
+    {"a", "href"},
+};

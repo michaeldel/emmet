@@ -153,6 +153,9 @@ tc '#page>div.logo+ul#navigation>li*5>a{Item $}' '
 </div>
 '
 
+# details
+tc 'a#foo' '<a href="" id="foo"></a>'
+
 # simple SGML examples
 tc sgml 'a' '<a></a>'
 tc sgml 'a>b' '

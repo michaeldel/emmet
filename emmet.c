@@ -292,6 +292,25 @@ const char * defaultname(const struct tag * parent) {
     return "div";
 }
 
+void insertdefaultattrs(struct tag * tag) {
+    for (size_t i = 0; i < sizeof DEFAULTATTRS / sizeof(const char *[2]); i++)
+        if (!strcmp(tag->name, DEFAULTATTRS[i][0])) {
+            if (!tag->attrs)
+                tag->attrs = mkattr(DEFAULTATTRS[i][1], "");
+            else {
+                for (const struct attr * attr = tag->attrs; attr; attr = attr->next)
+                    if (!strcmp(attr->name, DEFAULTATTRS[i][1]))
+                        return;
+
+                struct attr * defaultattr = mkattr(DEFAULTATTRS[i][1], "");
+                defaultattr->next = tag->attrs;
+                tag->attrs = defaultattr;
+
+                return;
+            }
+        }
+}
+
 struct tag * readtag(struct tag * parent) {
     if (peek() == '(') {
         advance();
@@ -316,6 +335,8 @@ struct tag * readtag(struct tag * parent) {
     } else {
         tag->attrs = readattrs();
     }
+
+    if (mode == HTML) insertdefaultattrs(tag);
 
     mergeattrs(tag->attrs);
 
