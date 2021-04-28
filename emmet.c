@@ -311,6 +311,15 @@ void insertdefaultattrs(struct tag * tag) {
         }
 }
 
+void expandabbreviations(struct tag * tag) {
+    for (size_t i = 0; i < sizeof ABBREVIATIONS / sizeof(const char *[2]); i++)
+        if (!strcmp(tag->name, ABBREVIATIONS[i][0])) {
+            free(tag->name);
+            tag->name = strdup(ABBREVIATIONS[i][1]);
+            break;
+        }
+}
+
 struct tag * readtag(struct tag * parent) {
     if (peek() == '(') {
         advance();
@@ -342,7 +351,10 @@ struct tag * readtag(struct tag * parent) {
     }
 
     if (!tag->name && (tag->attrs || !tag->text)) tag->name = strdup(defaultname(parent));
-    if (tag->name && mode == HTML) insertdefaultattrs(tag);
+    if (tag->name && mode == HTML) {
+        insertdefaultattrs(tag);
+        expandabbreviations(tag);
+    }
 
     mergeattrs(tag->attrs);
 
