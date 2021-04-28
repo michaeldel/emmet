@@ -1,6 +1,6 @@
 /* TODO: complete lists */
 const char * INLINES[] = {
-    "a", "em", "span"
+    "a", "b", "em", "span"
 };
 
 const char * SELFCLOSINGS[] = {

@@ -321,7 +321,6 @@ struct tag * readtag(struct tag * parent) {
     tag->parent = parent;
 
     tag->name = readname();
-    if (!tag->name) tag->name = strdup(defaultname(parent));
 
     tag->attrs = readattrs(); /* left attrs */
     tag->text = readtext();
@@ -336,7 +335,14 @@ struct tag * readtag(struct tag * parent) {
         tag->attrs = readattrs();
     }
 
-    if (mode == HTML) insertdefaultattrs(tag);
+    if (!tag->name && !tag->attrs && tag->text && tag->parent) {
+        tag->parent->text = tag->text;
+        free(tag);
+        return parse(); /* TODO: proper return tag */
+    }
+
+    if (!tag->name && (tag->attrs || !tag->text)) tag->name = strdup(defaultname(parent));
+    if (tag->name && mode == HTML) insertdefaultattrs(tag);
 
     mergeattrs(tag->attrs);
 
@@ -344,6 +350,13 @@ struct tag * readtag(struct tag * parent) {
 }
 
 void render(struct tag * tag, unsigned int level, unsigned int initcounter) {
+    if (!tag->name) {
+        assert(tag->text);
+        fputs(tag->text, stdout);
+        if (tag->sibling != NULL) render(tag->sibling, level, initcounter);
+        return;
+    }
+
     const unsigned int max_counter = MAX(initcounter, tag->counter);
 
     for (unsigned int i = initcounter; i <= max_counter; i++) {
@@ -376,7 +389,9 @@ void render(struct tag * tag, unsigned int level, unsigned int initcounter) {
         }
 
         if (tag->child != NULL) {
-            if (isinline(tag->child->name) && mode == HTML) {
+            if (!tag->child->name && mode == HTML) {
+                render(tag->child, 0, i);
+            } else if (isinline(tag->child->name) && mode == HTML) {
                 render(tag->child, 0, i);
             } else {
                 putchar('\n');
