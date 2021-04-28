@@ -65,19 +65,19 @@ char * expand_template(char * template, unsigned int value, unsigned int max) {
     const unsigned int padding = pci - pc - 1;
     unsigned int min = 1;
 
-    if (*pci == '@') {
-        if (*(++pci) == '-') value = max - value + 1;
+    if (*(pci++) == '@') {
+        if (*pci == '-') {
+            value = max - value + 1;
+            pci++;
+        }
         sscanf(pci, "%ud", &min);
         while (isdigit(*pci)) pci++;
     }
 
-    const size_t format_size = pci - pc;
-
     assert(pc > template);
-    assert(format_size > padding);
 
     const size_t left_size = (size_t)(pc - template);
-    const size_t right_size = strlen(template) - left_size - format_size;
+    const size_t right_size = strlen(template) - left_size - padding + 1;
 
     char format[BUFSIZ];
     sprintf(format, "%%0%dd", padding + 1);
