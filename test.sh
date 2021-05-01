@@ -312,6 +312,13 @@ tc sgml 'a>(b>c)+d' '
   <d></d>
 </a>
 '
+tc sgml '(a+b)*2' '
+<a></a>
+<b></b>
+<a></a>
+<b></b>
+'
+
 tc sgml 'a*0' '<a></a>'
 tc sgml 'a.item$*10' '
 <a class="item1"></a>
@@ -358,6 +365,23 @@ tc sgml 'a*2>b+c' '
   <b></b>
   <c></c>
 </a>
+'
+
+tc sgml '(a.$*2+b)*2' '
+<a class="1"></a>
+<a class="2"></a>
+<b></b>
+<a class="1"></a>
+<a class="2"></a>
+<b></b>
+'
+tc sgml '(a.\$*2+b)*2' '
+<a class="$"></a>
+<a class="$"></a>
+<b></b>
+<a class="$"></a>
+<a class="$"></a>
+<b></b>
 '
 
 tc sgml 'a.foo#bar' '<a class="foo" id="bar"></a>'
