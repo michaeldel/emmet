@@ -447,6 +447,15 @@ void clean(struct tag * tag) {
     free(tag);
 }
 
+struct tag * lastsibling(struct tag * tag) {
+    assert(tag);
+
+    struct tag * result = tag;
+    while (result->sibling) result = result->sibling;
+
+    return result;
+}
+
 struct tag * parse(void) {
     struct tag * root = readtag(NULL);
     struct tag * previous = root;
@@ -463,8 +472,21 @@ struct tag * parse(void) {
             previous = previous->sibling;
             break;
         case '^':
-            previous->parent->sibling = readtag(previous->parent->parent);
-            previous = previous->parent->sibling;
+            {
+                struct tag * ancestor = previous->parent;
+                while (peek() == '^') {
+                    /* TODO: check existing */
+                    ancestor = ancestor->parent;
+                    advance();
+                }
+                if (!ancestor) ancestor = lastsibling(root);
+
+                /* TODO: what if ancestor already has siblings ? */
+                assert(!ancestor->sibling);
+
+                ancestor->sibling = readtag(ancestor->parent);
+                previous = ancestor->sibling;
+            }
             break;
         case '*': 
             previous->counter = readuint();
