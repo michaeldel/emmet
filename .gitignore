@@ -1,2 +1,5 @@
 emmet
 !emmet/*
+
+test/unit
+!test/unit.*
