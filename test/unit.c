@@ -49,7 +49,6 @@ void test_expandtemplate_reverse() {
 
     check(!strcmp(expandtemplate("$@-10", 1, 5), "14"));
     check(!strcmp(expandtemplate("$@-10", 2, 5), "13"));
-
 }
 
 void (*const TESTS[])(void) = { DEFTESTS };
