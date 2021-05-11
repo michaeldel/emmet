@@ -138,7 +138,7 @@ char * readname() {
 }
 
 bool isvaluechar(char c) {
-    return isalnum(c) || c == '_' || c == '-' || c == '$' || c == '@';
+    return isalnum(c) || c == '_' || c == '-' || c == '$' || c == '@' || c == '\\';
 }
 
 char * readvalue() {
@@ -310,6 +310,16 @@ struct tag * readtag(struct tag * parent) {
     return tag;
 }
 
+void removebackslashes(char * string) {
+    assert(string);
+    size_t offset = 0;
+
+    for (char * pc = string; *pc != '\0'; pc++) {
+        if (*pc == '\\') offset++;
+        pc[0] = pc[offset];
+    }
+}
+
 void render(struct tag * tag, unsigned int level, unsigned int initcounter) {
     if (!tag->name) {
         assert(tag->text);
@@ -329,6 +339,8 @@ void render(struct tag * tag, unsigned int level, unsigned int initcounter) {
         for (struct attr * attr = tag->attrs; attr != NULL; attr = attr->next) {
             char * name = expandtemplate(attr->name, i, max_counter);
             char * value = expandtemplate(attr->value, i, max_counter);
+
+            removebackslashes(value);
 
             printf(" %s=\"%s\"", name, value);
 

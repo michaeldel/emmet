@@ -342,6 +342,10 @@ tc sgml 'a{foo $}*3' '
 <a>foo 2</a>
 <a>foo 3</a>
 '
+tc sgml 'a.\$*2' '
+<a class="$"></a>
+<a class="$"></a>
+'
 
 tc sgml 'a*2>b{item$}' '
 <a>

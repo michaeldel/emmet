@@ -19,7 +19,7 @@ struct placeholder {
     bool reverse;
 };
 
-char * expandtemplate(char * template, unsigned int value, unsigned int max) {
+char * expandtemplate(const char * template, unsigned int value, unsigned int max) {
     assert(max >= value);
 
     if (value == 0) return strdup(template);
@@ -27,7 +27,7 @@ char * expandtemplate(char * template, unsigned int value, unsigned int max) {
     struct placeholder placeholders[MAX_PLACEHOLDERS];
     size_t placeholders_count = 0;
 
-    char * pc = template;
+    const char * pc = template;
 
     /* TODO: cache placeholders for a given template */
     for (size_t i = 0; i < MAX_PLACEHOLDERS; i++) {
