@@ -11,17 +11,12 @@
 #include <sysexits.h>
 
 #include "config.h"
-
-#define MAX(a, b) ((a) > (b) ? (a) : (b))
+#include "template.h"
+#include "util.h"
 
 #define MAX_TAG_NAME_LEN 32
 #define MAX_TAG_ID_LEN 32
 #define MAX_TAG_CLASS 32
-
-void die(const char * name) {
-    fprintf(stderr, "%s: %s\n", name, strerror(errno));
-    abort(); /* TODO: consider exit and cleanup */
-}
 
 size_t counter = 0;
 char source[BUFSIZ];
@@ -50,52 +45,6 @@ enum mode {
 };
 
 enum mode mode = HTML;
-
-char * expand_template(char * template, unsigned int value, unsigned int max) {
-    /* TODO: properly refactor whole function */
-    assert(max >= value);
-
-    /* TODO: multiple templates in same string */
-    char * pc = strstr(template, "$");
-    if (pc == NULL) return strdup(template);
-
-    char * pci = pc;
-    while (*pci == '$') pci++;
-
-    const unsigned int padding = pci - pc - 1;
-    unsigned int min = 1;
-
-    if (*(pci++) == '@') {
-        if (*pci == '-') {
-            value = max - value + 1;
-            pci++;
-        }
-        sscanf(pci, "%ud", &min);
-        while (isdigit(*pci)) pci++;
-    }
-
-    assert(pc > template);
-
-    const size_t left_size = (size_t)(pc - template);
-    const size_t right_size = strlen(template) - left_size - padding + 1;
-
-    char format[BUFSIZ];
-    sprintf(format, "%%0%dd", padding + 1);
-
-    /* TODO: adjust to max value */
-    char formatted[5];
-    snprintf(formatted, sizeof(formatted), format, min - 1 + value);
-
-    const size_t size = left_size + strlen(formatted) + right_size;
-    char * expanded = (char *) calloc(size, sizeof(char));
-    if (!expanded) die("calloc");
-
-    strncat(expanded, template, left_size);
-    strcat(expanded, formatted);
-    strncat(expanded, pci + 1, right_size);
-
-    return expanded;
-}
 
 struct attr {
     char * name;
@@ -378,8 +327,8 @@ void render(struct tag * tag, unsigned int level, unsigned int initcounter) {
         fputs(tag->name, stdout);
 
         for (struct attr * attr = tag->attrs; attr != NULL; attr = attr->next) {
-            char * name = expand_template(attr->name, i, max_counter);
-            char * value = expand_template(attr->value, i, max_counter);
+            char * name = expandtemplate(attr->name, i, max_counter);
+            char * value = expandtemplate(attr->value, i, max_counter);
 
             printf(" %s=\"%s\"", name, value);
 
@@ -395,7 +344,7 @@ void render(struct tag * tag, unsigned int level, unsigned int initcounter) {
         putchar('>');
 
         if (tag->text != NULL) {
-            char * text = expand_template(tag->text, i, max_counter);
+            char * text = expandtemplate(tag->text, i, max_counter);
             printf("%s", text);
             free(text);
         }
