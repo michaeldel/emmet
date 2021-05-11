@@ -93,9 +93,6 @@ char * expandtemplate(char * template, unsigned int value, unsigned int max) {
         sprintf(destination, format, v);
 
         pc = &template[ph.position + ph.length];
-        // printf("exp |%s|\n", expanded);
-        // printf("PC %zu :: |%s|\n", i, pc);
-        // printf("phl %zu\n", ph.length);
     }
     if (*pc) strcat(expanded, pc);
 

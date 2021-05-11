@@ -44,8 +44,6 @@ void test_expandtemplate_min() {
 }
 
 void test_expandtemplate_reverse() {
-    //check(!strcmp(expandtemplate("foo $@-10 bar", 2, 5), "foo 13 bar"));
-
     check(!strcmp(expandtemplate("$@-", 1, 1), "1"));
     check(!strcmp(expandtemplate("$@-", 1, 2), "2"));
 
