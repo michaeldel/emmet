@@ -68,6 +68,13 @@ struct attr * mkattr(const char * name, const char * value) {
     return attr;     
 }
 
+struct attr * lastattr(struct attr * attr) {
+    assert(attr);
+
+    while (attr->next) attr = attr->next;
+    return attr;
+}
+
 struct tag {
     char * name;
     struct attr * attrs;
@@ -138,12 +145,24 @@ char * readname() {
 }
 
 bool isvaluechar(char c) {
+    /* TODO: match official emmet value chars */
     return isalnum(c) || c == '_' || c == '-' || c == '$' || c == '@' || c == '\\';
+}
+
+bool isquotedvaluechar(char c) {
+    /* TODO: match official emmet value chars */
+    return isprint(c) && c != '"' && c != '\n';
 }
 
 char * readvalue() {
     const size_t start = counter;
     while (isvaluechar(peek())) advance();
+    return strndup(&source[start], counter - start);
+}
+
+char * readquotedvalue() {
+    const size_t start = counter;
+    while (isquotedvaluechar(peek())) advance();
     return strndup(&source[start], counter - start);
 }
 
@@ -171,25 +190,50 @@ void mergeattrs(struct attr * attrs) {
             }
 }
 
+struct attr * readbracketedattr(void) {
+    while (peek() == ' ') advance();
+    if (peek() == ']') return NULL;
+
+    char * name = readname();
+
+    /* TODO: handle syntax errors */
+    assert(peek() == '=');
+    advance(); /* equal sign */
+
+    char * value;
+
+    if (peek() == '"') {
+        advance();
+        value = readquotedvalue();
+
+        /* TODO: handle syntax errors */
+        assert(peek() == '"');
+        advance();
+    } else {
+        value = readvalue();
+    }
+
+    struct attr * result = mkattr(name, value);
+
+    free(name);
+    free(value);
+
+    return result;
+}
+
 struct attr * readattr(void) {
     switch (advance()) {
     case '#': return mkattr("id", readvalue());
     case '.': return mkattr("class", readvalue());
     case '[': {
-        char * name = readname();
-        consume('=');
+        struct attr dummy = { .next = NULL };
+        struct attr * current = &dummy;
 
-        consume('"');
-        char * value = readvalue();
-        consume('"');
-
+        while ((current->next = readbracketedattr())) {
+            current = current->next;
+        }
         consume(']');
-
-        struct attr * result = mkattr(name, value);
-        free(name);
-        free(value);
-
-        return result;
+        return dummy.next;
     }
     default: return NULL;
     }
@@ -209,7 +253,8 @@ struct attr * readattrs() {
         return NULL;
 
     struct attr * attr = readattr();
-    attr->next = readattrs();
+
+    if (attr) lastattr(attr)->next = readattrs();
 
     return attr;
 }

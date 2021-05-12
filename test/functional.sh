@@ -393,4 +393,9 @@ tc sgml 'a#foo.bar' '<a id="foo" class="bar"></a>'
 tc sgml 'a.foo.bar' '<a class="foo bar"></a>'
 tc sgml 'a.foo.bar.baz' '<a class="foo bar baz"></a>'
 
+tc sgml 'a[foo="bar"]' '<a foo="bar"></a>'
+tc sgml 'a[foo=bar]' '<a foo="bar"></a>'
+tc sgml 'a[foo="bar baz"]' '<a foo="bar baz"></a>'
+tc sgml 'a[one=1 two=2]' '<a one="1" two="2"></a>'
+
 exit $ret
