@@ -6,7 +6,9 @@
 #include "template.h"
 
 bool succeeded;
-#define check(condition) if(!(condition)) { succeeded = false; return; }
+unsigned int line;
+
+#define check(condition) if(!(condition)) { succeeded = false; line = __LINE__; return; }
 
 void test_expandtemplate_empty() {
     check(expandtemplate("", 0, 0));
@@ -65,7 +67,7 @@ int main(void) {
         test();
 
         if (!succeeded) {
-            printf("FAIL %s\n", testname);
+            printf("FAIL %s (check at line %u)\n", testname, line);
             ret = EXIT_FAILURE;
         } else {
             printf("ok %s\n", testname);
