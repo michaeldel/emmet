@@ -79,27 +79,15 @@ struct tag {
     char * name;
     struct attr * attrs;
     char * text;
-
-    unsigned int counter;
-
-    struct tag * parent;
-    struct tag * child;
-    struct tag * sibling;
 };
 
 struct tag * new_tag() {
     struct tag * result = (struct tag *) malloc(sizeof(struct tag));
-    if (!result) die("malloc");
+    if (!result) die("malloc tag");
 
     result->name = NULL;
     result->attrs = NULL;
     result->text = NULL;
-
-    result->counter = 0;
-
-    result->parent = NULL;
-    result->child = NULL;
-    result->sibling = NULL;
 
     return result;
 }
@@ -113,7 +101,40 @@ bool is_selfclosing(const struct tag * tag) {
     return false;
 }
 
-struct tag * parse();
+struct node * parse();
+
+enum nodetype { TAG, TEXT, GROUP };
+
+struct node {
+    enum nodetype type;
+    union {
+        struct node * group;
+        struct tag * tag;
+        char * text;
+    } u;
+
+    unsigned int counter;
+
+    struct node * parent;
+    struct node * child;
+    struct node * sibling;
+};
+
+struct node * mknode(enum nodetype type) {
+    struct node * result = malloc(sizeof(struct node));
+    if (!result) die("malloc node");
+
+    result->type = type;
+    result->u.group = NULL;
+
+    result->counter = 0;
+
+    result->parent = NULL;
+    result->child = NULL;
+    result->sibling = NULL;
+    
+    return result;
+}
 
 unsigned int readuint() {
     const size_t start = counter;
@@ -315,14 +336,7 @@ void expandabbreviations(struct tag * tag) {
 }
 
 struct tag * readtag(struct tag * parent) {
-    if (peek() == '(') {
-        advance();
-        return parse();
-    }
-
     struct tag * tag = new_tag();
-    tag->parent = parent;
-
     tag->name = readname();
 
     tag->attrs = readattrs(); /* left attrs */
@@ -338,12 +352,6 @@ struct tag * readtag(struct tag * parent) {
         tag->attrs = readattrs();
     }
 
-    if (!tag->name && !tag->attrs && tag->text && tag->parent) {
-        tag->parent->text = tag->text;
-        free(tag);
-        return parse(); /* TODO: proper return tag */
-    }
-
     if (!tag->name && (tag->attrs || !tag->text)) tag->name = strdup(defaultname(parent));
     if (tag->name && mode == HTML) {
         insertdefaultattrs(tag);
@@ -353,6 +361,40 @@ struct tag * readtag(struct tag * parent) {
     mergeattrs(tag->attrs);
 
     return tag;
+}
+
+struct tag * youngesttagintree(struct node * node) {
+    if (!node) return NULL;
+    if (node->type == TAG) return node->u.tag;
+
+    fprintf(stderr, "TYPE %d\n", node->type);
+    fprintf(stderr, "TAG %d\n", TAG);
+    fprintf(stderr, "GROUP %d\n", GROUP);
+
+    assert(node->type == GROUP);
+    return youngesttagintree(node->parent);
+}
+
+struct node * readnode(struct node * parent) {
+    if (peek() == '(') {
+        advance();
+
+        struct node * node = mknode(GROUP);
+        node->u.group = parse();
+        return node;
+    }
+
+    if (peek() == '{') {
+        struct node * node = mknode(TEXT);
+        node->u.text = readtext();
+        return node;
+    }
+
+    struct node * node = mknode(TAG);
+    node->parent = parent;
+    node->u.tag = readtag(youngesttagintree(parent));
+
+    return node;
 }
 
 void removebackslashes(char * string) {
@@ -365,121 +407,111 @@ void removebackslashes(char * string) {
     }
 }
 
-void render(struct tag * tag, unsigned int level, unsigned int initcounter) {
-    if (!tag->name) {
-        assert(tag->text);
-        fputs(tag->text, stdout);
-        if (tag->sibling != NULL) render(tag->sibling, level, initcounter);
+void renderstarttag(const struct tag * tag, unsigned int counter, unsigned int maxcounter) {
+    putchar('<');
+    fputs(tag->name, stdout);
+
+    for (struct attr * attr = tag->attrs; attr; attr = attr->next) {
+        char * name = expandtemplate(attr->name, counter, maxcounter);
+        char * value = expandtemplate(attr->value, counter, maxcounter);
+
+        removebackslashes(value);
+
+        printf(" %s=\"%s\"", name, value);
+
+        free(name);
+        free(value);
+    }
+
+    if (is_selfclosing(tag)) {
+        puts("/>");
         return;
     }
 
-    const unsigned int max_counter = MAX(initcounter, tag->counter);
+    putchar('>');
 
-    for (unsigned int i = initcounter; i <= max_counter; i++) {
-        indent(level);
+    if (tag->text) {
+        char * text = expandtemplate(tag->text, counter, maxcounter);
+        printf("%s", text);
+        free(text);
+    }
+}
 
-        putchar('<');
-        fputs(tag->name, stdout);
+void renderendtag(const struct tag * tag) {
+    if (is_selfclosing(tag)) return;
+    printf("</%s>", tag->name);
+    if (!isinline(tag->name) || mode != HTML) putchar('\n');
+}
 
-        for (struct attr * attr = tag->attrs; attr != NULL; attr = attr->next) {
-            char * name = expandtemplate(attr->name, i, max_counter);
-            char * value = expandtemplate(attr->value, i, max_counter);
+void render(const struct node * node, unsigned int level, unsigned int initcounter) {
+    const unsigned int maxcounter = MAX(initcounter, node->counter);
+    if (node->counter) initcounter = 1;
 
-            removebackslashes(value);
+    for (unsigned int i = initcounter; i <= maxcounter; i++) {
+        switch (node->type) {
+        case GROUP:
+            render(node->u.group, level, i);
+            break;
+        case TEXT:
+            fputs(node->u.text, stdout);
+            break;
+        case TAG:
+            indent(level);
+            renderstarttag(node->u.tag, i, maxcounter);
 
-            printf(" %s=\"%s\"", name, value);
-
-            free(name);
-            free(value);
-        }
-
-        if (is_selfclosing(tag)) {
-            puts("/>");
-            return;
-        }
-
-        putchar('>');
-
-        if (tag->text != NULL) {
-            char * text = expandtemplate(tag->text, i, max_counter);
-            printf("%s", text);
-            free(text);
-        }
-
-        if (tag->child != NULL) {
-            if (!tag->child->name && mode == HTML) {
-                render(tag->child, 0, i);
-            } else if (isinline(tag->child->name) && mode == HTML) {
-                render(tag->child, 0, i);
-            } else {
-                putchar('\n');
-                render(tag->child, level + 1, i);
-                indent(level);
+            if (node->child) {
+                /* TODO: what about groups ? nested groups ? */
+                if (node->child->type == TEXT) {
+                    render(node->child, 0, i);
+                } else if (node->child->type == TAG && isinline(node->child->u.tag->name) && mode == HTML) {
+                    render(node->child, 0, i);
+                } else {
+                    putchar('\n');
+                    render(node->child, level + 1, i);
+                    indent(level);
+                }
             }
+
+            renderendtag(node->u.tag);
+            break;
         }
-
-        printf("</%s>", tag->name);
-
-        if (!isinline(tag->name) || mode != HTML) putchar('\n');
     }
 
-    if (tag->sibling != NULL) render(tag->sibling, level, initcounter);
+    if (node->sibling) render(node->sibling, level, initcounter);
 }
 
-void clean(struct tag * tag) {
-    /* TODO: re-enable cleanup */
+void clean(struct node * node) {
+    /* TODO: properly reimplement */
     return;
-
-    if (tag->sibling == NULL || tag->name != tag->sibling->name) {
-        free(tag->name);
-
-        struct attr * previous = NULL;
-
-        for (struct attr * attr = tag->attrs; attr != NULL; attr = attr->next) {
-            free(attr->name);
-            free(attr->value);
-
-            free(previous);
-            previous = attr;
-        }
-        free(previous);
-    }
-
-    free(tag->text);
-
-    if (tag->sibling != NULL) clean(tag->sibling);
-    if (tag->child != NULL) clean(tag->child);
-
-    free(tag);
 }
 
-struct tag * lastsibling(struct tag * tag) {
-    assert(tag);
+struct node * lastsibling(struct node * node) {
+    assert(node);
 
-    struct tag * result = tag;
+    struct node * result = node;
     while (result->sibling) result = result->sibling;
 
     return result;
 }
 
-struct tag * parse(void) {
-    struct tag * root = readtag(NULL);
-    struct tag * previous = root;
+struct node * parse(void) {
+    struct node * root = readnode(NULL);
+    struct node * previous = root;
 
     for (;;)  {
         const char op = advance();
         switch(op) {
         case '>':
-            previous->child = readtag(previous);
+            previous->child = readnode(previous);
             previous = previous->child;
             break;
         case '+':
-            previous->sibling = readtag(previous->parent);
+            previous->sibling = readnode(previous->parent);
             previous = previous->sibling;
             break;
         case '^':
             {
-                struct tag * ancestor = previous->parent;
+                struct node * ancestor = previous->parent;
                 while (peek() == '^') {
                     /* TODO: check existing */
                     ancestor = ancestor->parent;
@@ -490,7 +522,7 @@ struct tag * parse(void) {
                 /* TODO: what if ancestor already has siblings ? */
                 assert(!ancestor->sibling);
 
-                ancestor->sibling = readtag(ancestor->parent);
+                ancestor->sibling = readnode(ancestor->parent);
                 previous = ancestor->sibling;
             }
             break;
@@ -530,7 +562,7 @@ int main(int argc, char * argv[]) {
     char * err = fgets(source, BUFSIZ, stdin);
     assert(err != NULL);
 
-    struct tag * tree = parse();    
+    struct node * tree = parse();    
     render(tree, 0, 1);
     clean(tree);
 

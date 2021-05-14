@@ -395,6 +395,13 @@ tc sgml '(a.\$*2+b)*2' '
 <b></b>
 '
 
+tc sgml '(a.$*2)*2' '
+<a class="1"></a>
+<a class="2"></a>
+<a class="1"></a>
+<a class="2"></a>
+'
+
 tc sgml 'a.foo#bar' '<a class="foo" id="bar"></a>'
 tc sgml 'a#foo.bar' '<a id="foo" class="bar"></a>'
 tc sgml 'a.foo.bar' '<a class="foo bar"></a>'
