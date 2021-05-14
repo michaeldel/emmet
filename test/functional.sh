@@ -318,6 +318,13 @@ tc sgml '(a+b)*2' '
 <a></a>
 <b></b>
 '
+tc sgml '(a+b)*2+c' '
+<a></a>
+<b></b>
+<a></a>
+<b></b>
+<c></c>
+'
 
 tc sgml 'a*0' '<a></a>'
 tc sgml 'a.item$*10' '
