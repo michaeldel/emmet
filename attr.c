@@ -33,10 +33,13 @@ void mergeattrs(struct attr * attrs) {
     for (struct attr * attr = attrs; attr; parent = attr, attr = attr->next)
         for (struct attr * prev = attrs; prev != attr; prev = prev->next)
             if (!strcmp(prev->name, attr->name)) {
-                /* TODO: prevent using too many mallocs */
-                /* TODO: prevent memory leaks */
-                prev->value = strcat(prev->value, " ");
-                prev->value = strcat(prev->value, attr->value);
+                /* 2 is for space and nul termination */
+                const size_t newsize = strlen(prev->value) + strlen(attr->value) + 2;
+                prev->value = realloc(prev->value, newsize);
+                if (!prev->value) die("mergeattrs: realloc value");
+
+                strcat(prev->value, " ");
+                strcat(prev->value, attr->value);
 
                 parent->next = attr->next;
 

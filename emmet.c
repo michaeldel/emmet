@@ -191,8 +191,20 @@ struct attr * readbracketedattr(void) {
 
 struct attr * readattr(void) {
     switch (advance()) {
-    case '#': return mkattr("id", readvalue());
-    case '.': return mkattr("class", readvalue());
+    case '#': {
+        char * value = readvalue();
+        struct attr * attr = mkattr("id", value);
+
+        free(value);
+        return attr;
+    }
+    case '.': {
+        char * value = readvalue();
+        struct attr * attr = mkattr("class", value);
+
+        free(value);
+        return attr;
+    }
     case '[': {
         struct attr dummy = { .next = NULL };
         struct attr * current = &dummy;
