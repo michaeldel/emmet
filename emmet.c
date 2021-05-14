@@ -10,6 +10,7 @@
 #include <unistd.h>
 #include <sysexits.h>
 
+#include "attr.h"
 #include "config.h"
 #include "template.h"
 #include "util.h"
@@ -45,35 +46,6 @@ enum mode {
 };
 
 enum mode mode = HTML;
-
-struct attr {
-    char * name;
-    char * value;
-
-    struct attr * next;
-};
-
-struct attr * mkattr(const char * name, const char * value) {
-    struct attr * attr = malloc(sizeof(struct attr));
-    if (!attr) die("mkattr: malloc attr");
-
-    attr->name = strdup(name);
-    if (!attr->name) die("mkattr: strdup name");
-
-    attr->value = strdup(value);
-    if (!attr->value) die("mkattr: strdup value");
-
-    attr->next = NULL;
-
-    return attr;     
-}
-
-struct attr * lastattr(struct attr * attr) {
-    assert(attr);
-
-    while (attr->next) attr = attr->next;
-    return attr;
-}
 
 struct tag {
     char * name;
@@ -186,31 +158,6 @@ char * readquotedvalue() {
     while (isquotedvaluechar(peek())) advance();
     return strndup(&source[start], counter - start);
 }
-
-void mergeattrs(struct attr * attrs) {
-    struct attr * parent = NULL;
-
-    for (struct attr * attr = attrs; attr; parent = attr, attr = attr->next)
-        for (struct attr * prev = attrs; prev != attr; prev = prev->next)
-            if (!strcmp(prev->name, attr->name)) {
-                /* TODO: prevent using too many mallocs */
-                /* TODO: prevent memory leaks */
-                prev->value = strcat(prev->value, " ");
-                prev->value = strcat(prev->value, attr->value);
-
-                parent->next = attr->next;
-
-                free(attr->name);
-                free(attr->value);
-                free(attr);
-
-                if (!parent->next) return;
-
-                attr = parent;
-                break;
-            }
-}
-
 struct attr * readbracketedattr(void) {
     while (peek() == ' ') advance();
     if (peek() == ']') return NULL;
