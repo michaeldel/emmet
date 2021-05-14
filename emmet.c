@@ -49,8 +49,8 @@ enum mode mode = HTML;
 
 struct tag {
     char * name;
-    struct attr * attrs;
     char * text;
+    struct attr * attrs;
 };
 
 struct tag * mktag() {
@@ -407,8 +407,37 @@ void render(const struct node * node, unsigned int level, unsigned int initcount
 }
 
 void clean(struct node * node) {
-    /* TODO: properly reimplement */
-    return;
+    switch (node->type) {
+    case TEXT:
+        free(node->u.text);
+        break;
+    case TAG:
+        free(node->u.tag->name);
+        free(node->u.tag->text);
+
+        struct attr * attr = node->u.tag->attrs;
+
+        while (attr) {
+            free(attr->name);
+            free(attr->value);
+
+            struct attr * next = attr->next;
+            free(attr);
+            attr = next;
+        }
+
+        free(node->u.tag);
+
+        break;
+    case GROUP:
+        clean(node->u.group);
+        break;
+    }
+
+    if (node->child) clean(node->child);
+    if (node->sibling) clean(node->sibling);
+
+    free(node);
 }
 
 struct node * lastsibling(struct node * node) {

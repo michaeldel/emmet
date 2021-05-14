@@ -29,10 +29,10 @@ runtests: test/unit test/functional.sh emmet
 	./test/functional.sh
 
 memcheck: emmet
-	echo 'a>b>c' | $(VALGRIND) $(VFLAGS)./emmet
+	echo 'a>b>c' | $(VALGRIND) $(VFLAGS) ./emmet
 
 fullmemcheck: emmet
-	EMMET='$(VALGRIND) $(VFLAGS) ./emmet' ./test.sh
+	EMMET='$(VALGRIND) $(VFLAGS) ./emmet' ./test/functional.sh
 
 clean:
 	rm -f emmet
