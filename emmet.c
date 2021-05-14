@@ -314,10 +314,6 @@ struct tag * youngesttagintree(struct node * node) {
     if (!node) return NULL;
     if (node->type == TAG) return node->u.tag;
 
-    fprintf(stderr, "TYPE %d\n", node->type);
-    fprintf(stderr, "TAG %d\n", TAG);
-    fprintf(stderr, "GROUP %d\n", GROUP);
-
     assert(node->type == GROUP);
     return youngesttagintree(node->parent);
 }
