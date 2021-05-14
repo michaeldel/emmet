@@ -1,7 +1,7 @@
 #include <assert.h>
 #include <ctype.h>
 #include <stdbool.h>
-#include <stdio.h> /* TODO: use strtol instead of scanf */
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -52,9 +52,9 @@ char * expandtemplate(const char * template, unsigned int value, unsigned int ma
                 pc++;
             }
 
-            /* TODO: use strol, handle lack of counter */
-            sscanf(pc, "%ud", &min);
-            while (isdigit(*pc)) pc++;
+            char * endptr;
+            min = MAX(min, (unsigned int) strtol(pc, &endptr, 10));
+            pc = endptr;
         }
 
         placeholders[i] = (struct placeholder) {
