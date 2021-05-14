@@ -207,13 +207,6 @@ struct attr * readattr(void) {
     }
 }
 
-bool contains(const char container[], size_t size, char candidate) {
-    for (size_t i = 0; i < size; i++)
-        if (container[i] == candidate)
-            return true;
-    return false;
-}
-
 struct attr * readattrs() {
     const char prefixes[] = {'#', '.', '['};
 
@@ -338,16 +331,6 @@ struct node * readnode(struct node * parent) {
     node->u.tag = readtag(youngesttagintree(parent));
 
     return node;
-}
-
-void removebackslashes(char * string) {
-    assert(string);
-    size_t offset = 0;
-
-    for (char * pc = string; *pc != '\0'; pc++) {
-        if (*pc == '\\') offset++;
-        pc[0] = pc[offset];
-    }
 }
 
 void renderstarttag(const struct tag * tag, unsigned int counter, unsigned int maxcounter) {
