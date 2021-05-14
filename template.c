@@ -69,7 +69,7 @@ char * expandtemplate(const char * template, unsigned int value, unsigned int ma
 
     if (placeholders_count == 0) return strdup(template);
 
-    char * expanded = (char *) calloc(
+    char * expanded = calloc(
         strlen(template) + MAX_COUNTER_LENGTH * placeholders_count,
         sizeof(char)
     );

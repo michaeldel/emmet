@@ -54,7 +54,7 @@ struct attr {
 };
 
 struct attr * mkattr(const char * name, const char * value) {
-    struct attr * attr = (struct attr *) malloc(sizeof(struct attr));
+    struct attr * attr = malloc(sizeof(struct attr));
     if (!attr) die("mkattr: malloc attr");
 
     attr->name = strdup(name);
@@ -81,19 +81,19 @@ struct tag {
     char * text;
 };
 
-struct tag * new_tag() {
-    struct tag * result = (struct tag *) malloc(sizeof(struct tag));
-    if (!result) die("malloc tag");
+struct tag * mktag() {
+    struct tag * tag = malloc(sizeof(struct tag));
+    if (!tag) die("mktag: malloc tag");
 
-    result->name = NULL;
-    result->attrs = NULL;
-    result->text = NULL;
+    tag->name = NULL;
+    tag->attrs = NULL;
+    tag->text = NULL;
 
-    return result;
+    return tag;
 }
 
-bool is_selfclosing(const struct tag * tag) {
-    assert(tag->name != NULL);
+bool isselfclosing(const struct tag * tag) {
+    assert(tag->name);
 
     for (size_t i = 0; i < sizeof SELFCLOSINGS / sizeof(const char *); i++)
         if (!strcmp(tag->name, SELFCLOSINGS[i]))
@@ -144,7 +144,7 @@ unsigned int readuint() {
     /* TODO: proper overflow handling */
     assert(result >= 0 && result <= UINT_MAX);
 
-    return (unsigned int)result;
+    return (unsigned int) result;
 }
 
 void indent(unsigned int level) {
@@ -336,7 +336,7 @@ void expandabbreviations(struct tag * tag) {
 }
 
 struct tag * readtag(struct tag * parent) {
-    struct tag * tag = new_tag();
+    struct tag * tag = mktag();
     tag->name = readname();
 
     tag->attrs = readattrs(); /* left attrs */
@@ -423,7 +423,7 @@ void renderstarttag(const struct tag * tag, unsigned int counter, unsigned int m
         free(value);
     }
 
-    if (is_selfclosing(tag)) {
+    if (isselfclosing(tag)) {
         puts("/>");
         return;
     }
@@ -438,7 +438,7 @@ void renderstarttag(const struct tag * tag, unsigned int counter, unsigned int m
 }
 
 void renderendtag(const struct tag * tag) {
-    if (is_selfclosing(tag)) return;
+    if (isselfclosing(tag)) return;
     printf("</%s>", tag->name);
     if (!isinline(tag->name) || mode != HTML) putchar('\n');
 }
