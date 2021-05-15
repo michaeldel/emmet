@@ -36,8 +36,10 @@ memcheck: emmet
 fullmemcheck: emmet
 	EMMET='$(VALGRIND) $(VFLAGS) ./emmet' ./test/functional.sh
 
+ci: runtests memcheck fullmemcheck
+
 clean:
 	rm -f emmet
 	rm -f test/unit
 
-.PHONY: clean fullmemcheck memcheck runtests
+.PHONY: ci clean fullmemcheck memcheck runtests
