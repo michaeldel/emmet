@@ -500,7 +500,6 @@ struct node * parse(void) {
             return root;
         case '\n':
         case '\0':
-            /* TODO: handle properly in groups */
             return root;
         default:
             fprintf(stderr, "ERROR: invalid operator: %c (%d)\n", op, op);
