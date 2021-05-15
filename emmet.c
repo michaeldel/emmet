@@ -480,8 +480,8 @@ struct node * parse(void) {
             {
                 struct node * ancestor = previous->parent;
                 while (peek() == '^') {
-                    /* TODO: check existing */
-                    ancestor = ancestor->parent;
+                    /* ignore excess climbs */
+                    ancestor = ancestor ? ancestor->parent : ancestor;
                     advance();
                 }
                 if (!ancestor) ancestor = lastsibling(root);

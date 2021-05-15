@@ -412,4 +412,18 @@ tc sgml 'a[foo=bar]' '<a foo="bar"></a>'
 tc sgml 'a[foo="bar baz"]' '<a foo="bar baz"></a>'
 tc sgml 'a[one=1 two=2]' '<a one="1" two="2"></a>'
 
+tc sgml 'a^^b' '
+<a></a>
+<b></b>
+'
+tc sgml 'a^^^^^^^^b' '
+<a></a>
+<b></b>
+'
+tc sgml 'a^^b^^c' '
+<a></a>
+<b></b>
+<c></c>
+'
+
 exit $ret
