@@ -12,6 +12,7 @@
 
 #include "attr.h"
 #include "config.h"
+#include "tag.h"
 #include "template.h"
 #include "util.h"
 
@@ -46,32 +47,6 @@ enum mode {
 };
 
 enum mode mode = HTML;
-
-struct tag {
-    char * name;
-    char * text;
-    struct attr * attrs;
-};
-
-struct tag * mktag() {
-    struct tag * tag = malloc(sizeof(struct tag));
-    if (!tag) die("mktag: malloc tag");
-
-    tag->name = NULL;
-    tag->attrs = NULL;
-    tag->text = NULL;
-
-    return tag;
-}
-
-bool isselfclosing(const struct tag * tag) {
-    assert(tag->name);
-
-    for (size_t i = 0; i < sizeof SELFCLOSINGS / sizeof(const char *); i++)
-        if (!strcmp(tag->name, SELFCLOSINGS[i]))
-            return true;
-    return false;
-}
 
 struct node * parse();
 
@@ -242,12 +217,6 @@ char * readtext() {
     return strndup(&source[start], counter - start - 1);
 }
 
-bool isinline(const char * name) {
-    for (size_t i = 0; i < sizeof INLINES / sizeof(char *); i++)
-        if (!strcmp(name, INLINES[i])) return true;
-    return false;
-}
-
 const char * defaultname(const struct tag * parent) {
     if (!parent) return "div";
     if (!strcmp(parent->name, "ul")) return "li";
@@ -255,7 +224,7 @@ const char * defaultname(const struct tag * parent) {
     if (!strcmp(parent->name, "table")) return "tr";
     if (!strcmp(parent->name, "tr")) return "td";
 
-    if (isinline(parent->name)) return "span";
+    if (isinline(parent)) return "span";
     return "div";
 }
 
@@ -378,7 +347,7 @@ void renderstarttag(const struct tag * tag, unsigned int counter, unsigned int m
 void renderendtag(const struct tag * tag) {
     if (isselfclosing(tag)) return;
     printf("</%s>", tag->name);
-    if (!isinline(tag->name) || mode != HTML) putchar('\n');
+    if (!isinline(tag) || mode != HTML) putchar('\n');
 }
 
 void render(const struct node * node, unsigned int level, unsigned int initcounter) {
@@ -401,7 +370,11 @@ void render(const struct node * node, unsigned int level, unsigned int initcount
                 /* TODO: what about groups ? nested groups ? */
                 if (node->child->type == TEXT) {
                     render(node->child, 0, i);
-                } else if (node->child->type == TAG && isinline(node->child->u.tag->name) && mode == HTML) {
+                } else if (
+                    node->child->type == TAG &&
+                    isinline(node->child->u.tag) &&
+                    mode == HTML
+                ) {
                     render(node->child, 0, i);
                 } else {
                     putchar('\n');

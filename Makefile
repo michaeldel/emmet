@@ -4,7 +4,9 @@ CFLAGS = -Wall -Wextra -pedantic -g
 VALGRIND = valgrind
 VFLAGS = --quiet --error-exitcode=1 --leak-check=full --track-origins=yes
 
-COMMONDEPS = attr.c template.c util.c attr.h config.h template.h util.h
+SRC = attr.c tag.c template.c util.c
+HEADERS = attr.h tag.h config.h template.h util.h
+COMMONDEPS = $(SRC) $(HEADERS)
 
 emmet: emmet.c $(COMMONDEPS)
 	$(CC) $(CFLAGS) -o $@ $^
