@@ -2,8 +2,14 @@
 set -o nounset
 
 EMMET=${EMMET:=./emmet}
+VERBOSE=0
 
 ret=0;
+
+numtests=0
+numpasses=0
+numfailures=0
+numerrors=0
 
 tc() {
     local cmd="$EMMET"
@@ -17,18 +23,25 @@ tc() {
         shift
     fi
 
-    output=$(echo "$1" | $cmd)
+    local output=$(echo "$1" | $cmd)
+    numtests=$((numtests + 1))
 
     if [ $? -ne 0 ]; then
-        echo "ERROR $1"
+        numerrors=$((numerrors + 1))
+        [ $VERBOSE -eq 1 ] && echo "ERROR $1" || echo -n "!"
         ret=1
         return
     fi
 
-    diff --color -u <(echo "$2" | sed -e '/^$/d') <(echo "$output") && echo "ok $1" || {
-        echo "FAIL $1"
+    if diff --color -u <(echo "$2" | sed -e '/^$/d') <(echo "$output"); then
+        numpasses=$((numpasses + 1))
+        [ $VERBOSE -eq 1 ] && echo "ok $1" || echo -n "."
+    else
+        numfailures=$((numfailures + 1))
+        
+        [ $VERBOSE -eq 1 ] && echo "FAIL $1"|| echo -n "F"
         ret=1
-    }
+    fi
 }
 
 tc 'html' '<html></html>'
@@ -535,5 +548,8 @@ tc -m sgml -- 'a^^b^^c' '
 <b></b>
 <c></c>
 '
+
+echo ''
+echo "$numtests tests, $numpasses passed, $numfailures failed, $numerrors errors"
 
 exit $ret
