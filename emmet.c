@@ -45,6 +45,7 @@ enum mode {
 };
 
 enum mode mode = HTML;
+bool printnewlines = true;
 
 struct node * parse();
 
@@ -349,7 +350,7 @@ void renderstarttag(const struct tag * tag, unsigned int counter, unsigned int m
 void renderendtag(const struct tag * tag) {
     if (isselfclosing(tag)) return;
     printf("</%s>", tag->name);
-    if (!isinline(tag) || mode != HTML) putchar('\n');
+    if (printnewlines && (!isinline(tag) || mode != HTML)) putchar('\n');
 }
 
 void render(const struct node * node, unsigned int level, unsigned int initcounter) {
@@ -365,7 +366,7 @@ void render(const struct node * node, unsigned int level, unsigned int initcount
             fputs(node->u.text, stdout);
             break;
         case TAG:
-            indent(level);
+            if (printnewlines) indent(level);
             renderstarttag(node->u.tag, i, maxcounter);
 
             if (node->child) {
@@ -379,9 +380,9 @@ void render(const struct node * node, unsigned int level, unsigned int initcount
                 ) {
                     render(node->child, 0, i);
                 } else {
-                    putchar('\n');
+                    if (printnewlines) putchar('\n');
                     render(node->child, level + 1, i);
-                    indent(level);
+                    if (printnewlines) indent(level);
                 }
             }
 
@@ -485,7 +486,7 @@ struct node * parse(void) {
 
 int main(int argc, char * argv[]) {
     int opt;
-    while ((opt = getopt(argc, argv, "m:")) != -1)
+    while ((opt = getopt(argc, argv, "m:n")) != -1)
         switch (opt) {
         case 'm':
             if (!strcmp(optarg, "html")) mode = HTML;
@@ -494,6 +495,9 @@ int main(int argc, char * argv[]) {
                 fprintf(stderr, "Invalid mode, available modes are: html, sgml");
                 exit(EX_USAGE);
             }
+            break;
+        case 'n':
+            printnewlines = false;
             break;
         default:
             break;

@@ -6,14 +6,18 @@ EMMET=${EMMET:=./emmet}
 ret=0;
 
 tc() {
-    if [ $# -eq 3 ]; then
-        opts="-m $1"
+    local cmd="$EMMET"
+
+    if [ $# -gt 2 ]; then
+        while [ "$1" != '--' ]; do
+            cmd="$cmd $1"
+            shift
+        done
+
         shift
-    else
-        opts=""
     fi
 
-    output=$(echo "$1" | $EMMET $opts)
+    output=$(echo "$1" | $cmd)
 
     if [ $? -ne 0 ]; then
         echo "ERROR $1"
@@ -373,20 +377,20 @@ tc 'p{Click }+a{here}+{ to continue}' '
 tc 'a#foo' '<a href="" id="foo"></a>'
 
 # simple SGML examples
-tc sgml 'a' '<a></a>'
-tc sgml 'a>b' '
+tc -m sgml -- 'a' '<a></a>'
+tc -m sgml -- 'a>b' '
 <a>
   <b></b>
 </a>
 '
-tc sgml 'a>b>c' '
+tc -m sgml -- 'a>b>c' '
 <a>
   <b>
     <c></c>
   </b>
 </a>
 '
-tc sgml 'a>(b>c)+d' '
+tc -m sgml -- 'a>(b>c)+d' '
 <a>
   <b>
     <c></c>
@@ -394,13 +398,13 @@ tc sgml 'a>(b>c)+d' '
   <d></d>
 </a>
 '
-tc sgml '(a+b)*2' '
+tc -m sgml -- '(a+b)*2' '
 <a></a>
 <b></b>
 <a></a>
 <b></b>
 '
-tc sgml '(a+b)*2+c' '
+tc -m sgml -- '(a+b)*2+c' '
 <a></a>
 <b></b>
 <a></a>
@@ -408,8 +412,8 @@ tc sgml '(a+b)*2+c' '
 <c></c>
 '
 
-tc sgml 'a*0' '<a></a>'
-tc sgml 'a.item$*10' '
+tc -m sgml -- 'a*0' '<a></a>'
+tc -m sgml -- 'a.item$*10' '
 <a class="item1"></a>
 <a class="item2"></a>
 <a class="item3"></a>
@@ -421,22 +425,22 @@ tc sgml 'a.item$*10' '
 <a class="item9"></a>
 <a class="item10"></a>
 '
-tc sgml 'a.item$@10*3' '
+tc -m sgml -- 'a.item$@10*3' '
 <a class="item10"></a>
 <a class="item11"></a>
 <a class="item12"></a>
 '
-tc sgml 'a{foo $}*3' '
+tc -m sgml -- 'a{foo $}*3' '
 <a>foo 1</a>
 <a>foo 2</a>
 <a>foo 3</a>
 '
-tc sgml 'a.\$*2' '
+tc -m sgml -- 'a.\$*2' '
 <a class="$"></a>
 <a class="$"></a>
 '
 
-tc sgml 'a*2>b{item$}' '
+tc -m sgml -- 'a*2>b{item$}' '
 <a>
   <b>item1</b>
 </a>
@@ -444,12 +448,12 @@ tc sgml 'a*2>b{item$}' '
   <b>item2</b>
 </a>
 '
-tc sgml 'a*2+b' '
+tc -m sgml -- 'a*2+b' '
 <a></a>
 <a></a>
 <b></b>
 '
-tc sgml 'a*2>b+c' '
+tc -m sgml -- 'a*2>b+c' '
 <a>
   <b></b>
   <c></c>
@@ -460,7 +464,7 @@ tc sgml 'a*2>b+c' '
 </a>
 '
 
-tc sgml '(a.$*2+b)*2' '
+tc -m sgml -- '(a.$*2+b)*2' '
 <a class="1"></a>
 <a class="2"></a>
 <b></b>
@@ -468,7 +472,7 @@ tc sgml '(a.$*2+b)*2' '
 <a class="2"></a>
 <b></b>
 '
-tc sgml '(a.\$*2+b)*2' '
+tc -m sgml -- '(a.\$*2+b)*2' '
 <a class="$"></a>
 <a class="$"></a>
 <b></b>
@@ -477,32 +481,32 @@ tc sgml '(a.\$*2+b)*2' '
 <b></b>
 '
 
-tc sgml '(a.$*2)*2' '
+tc -m sgml -- '(a.$*2)*2' '
 <a class="1"></a>
 <a class="2"></a>
 <a class="1"></a>
 <a class="2"></a>
 '
 
-tc sgml 'a.foo#bar' '<a class="foo" id="bar"></a>'
-tc sgml 'a#foo.bar' '<a id="foo" class="bar"></a>'
-tc sgml 'a.foo.bar' '<a class="foo bar"></a>'
-tc sgml 'a.foo.bar.baz' '<a class="foo bar baz"></a>'
+tc -m sgml -- 'a.foo#bar' '<a class="foo" id="bar"></a>'
+tc -m sgml -- 'a#foo.bar' '<a id="foo" class="bar"></a>'
+tc -m sgml -- 'a.foo.bar' '<a class="foo bar"></a>'
+tc -m sgml -- 'a.foo.bar.baz' '<a class="foo bar baz"></a>'
 
-tc sgml 'a[foo="bar"]' '<a foo="bar"></a>'
-tc sgml 'a[foo=bar]' '<a foo="bar"></a>'
-tc sgml 'a[foo="bar baz"]' '<a foo="bar baz"></a>'
-tc sgml 'a[one=1 two=2]' '<a one="1" two="2"></a>'
+tc -m sgml -- 'a[foo="bar"]' '<a foo="bar"></a>'
+tc -m sgml -- 'a[foo=bar]' '<a foo="bar"></a>'
+tc -m sgml -- 'a[foo="bar baz"]' '<a foo="bar baz"></a>'
+tc -m sgml -- 'a[one=1 two=2]' '<a one="1" two="2"></a>'
 
-tc sgml 'a^^b' '
+tc -m sgml -- 'a^^b' '
 <a></a>
 <b></b>
 '
-tc sgml 'a^^^^^^^^b' '
+tc -m sgml -- 'a^^^^^^^^b' '
 <a></a>
 <b></b>
 '
-tc sgml 'a^^b^^c' '
+tc -m sgml -- 'a^^b^^c' '
 <a></a>
 <b></b>
 <c></c>
