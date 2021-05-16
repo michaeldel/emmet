@@ -99,7 +99,7 @@ void indent(unsigned int level) {
 }
 
 bool isnamechar(char c) {
-    return isalnum(c) || c == '_' || c == '-' || c == ':' || c == '$';
+    return isalnum(c) || c == '_' || c == '-' || c == ':' || c == '!' || c == '$';
 }
 
 bool isbracketednamechar(char c) {
