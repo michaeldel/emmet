@@ -218,21 +218,13 @@ char * readtext() {
 const char * defaultname(const struct tag * parent) {
     if (!parent) return "div";
 
-    if (!strcmp(parent->name, "p")) return "span";
-    if (!strcmp(parent->name, "ul")) return "li";
-    if (!strcmp(parent->name, "ol")) return "li";
-    if (!strcmp(parent->name, "table")) return "tr";
-    if (!strcmp(parent->name, "tr")) return "td";
-    if (!strcmp(parent->name, "tbody")) return "tr";
-    if (!strcmp(parent->name, "thead")) return "tr";
-    if (!strcmp(parent->name, "tfoot")) return "tr";
-    if (!strcmp(parent->name, "colgroup")) return "col";
-    if (!strcmp(parent->name, "select")) return "option";
-    if (!strcmp(parent->name, "optgroup")) return "option";
-    if (!strcmp(parent->name, "video")) return "source";
-    if (!strcmp(parent->name, "audio")) return "source";
-    if (!strcmp(parent->name, "object")) return "param";
-    if (!strcmp(parent->name, "map")) return "area";
+    for (
+        size_t i = 0;
+        i < sizeof DEFAULTTAGNAMEBYPARENT / sizeof DEFAULTTAGNAMEBYPARENT[0];
+        i++
+    )
+        if (!strcmp(parent->name, DEFAULTTAGNAMEBYPARENT[i][0]))
+            return DEFAULTTAGNAMEBYPARENT[i][1];
 
     if (isinline(parent)) return "span";
     return "div";
