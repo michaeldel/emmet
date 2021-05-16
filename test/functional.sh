@@ -225,6 +225,30 @@ tc 'map>.foo' '
 </map>
 '
 
+# emmet source code tests
+tc 'p' '<p></p>'
+tc 'p{text}' '<p>text</p>'
+tc 'h$' '<h1></h1>'
+tc '.nav' '<div class="nav"></div>'
+tc 'div.width1\/2' '<div class="width1/2"></div>'
+tc '#sample*3' '
+<div id="sample"></div>
+<div id="sample"></div>
+<div id="sample"></div>
+'
+
+tc 'li[repeat.for="todo of todoList"]' '<li repeat.for="todo of todoList"></li>'
+
+tc -m sgml -n -- 'a>b' '<a><b></b></a>'
+tc -m sgml -n -- 'a+b' '<a></a><b></b>'
+tc -m sgml -n -- 'a+b>c+d' '<a></a><b><c></c><d></d></b>'
+tc -m sgml -n -- 'a>b>c+e' '<a><b><c></c><e></e></b></a>'
+tc -m sgml -n -- 'a>b>c^d' '<a><b><c></c></b><d></d></a>'
+tc -m sgml -n -- 'a>b>c^^^^d' '<a><b><c></c></b></a><d></d>'
+tc -m sgml -n -- 'a:b>c' '<a:b><c></c></a:b>'
+
+tc 'ul.nav[title="foo"]' '<ul class="nav" title="foo"></ul>'
+
 # emmet.io documentation examples
 tc '#page>div.logo+ul#navigation>li*5>a{Item $}' '
 <div id="page">

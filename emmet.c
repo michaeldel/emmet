@@ -99,7 +99,11 @@ void indent(unsigned int level) {
 }
 
 bool isnamechar(char c) {
-    return isalnum(c) || c == '_' || c == '-';
+    return isalnum(c) || c == '_' || c == '-' || c == ':' || c == '$';
+}
+
+bool isbracketednamechar(char c) {
+    return isnamechar(c) || c == '.' || c == '#';
 }
 
 char * readname() {
@@ -111,9 +115,18 @@ char * readname() {
     return strndup(&source[start], counter - start);
 }
 
+char * readbracketedname() {
+    /* returns NULL if name empty */
+    const size_t start = counter;
+    while (isbracketednamechar(peek())) advance();
+
+    if (counter == start) return NULL;
+    return strndup(&source[start], counter - start);
+}
+
 bool isvaluechar(char c) {
     /* TODO: match official emmet value chars */
-    return isalnum(c) || c == '_' || c == '-' || c == '$' || c == '@' || c == '\\';
+    return isalnum(c) || c == '_' || c == '-' || c == ':' || c == '$' || c == '@' || c == '\\' || c == '/';
 }
 
 bool isquotedvaluechar(char c) {
@@ -136,7 +149,7 @@ struct attr * readbracketedattr(void) {
     while (peek() == ' ') advance();
     if (peek() == ']') return NULL;
 
-    char * name = readname();
+    char * name = readbracketedname();
 
     /* TODO: handle syntax errors */
     assert(peek() == '=');
@@ -319,7 +332,9 @@ struct node * readnode(struct node * parent) {
 
 void renderstarttag(const struct tag * tag, unsigned int counter, unsigned int maxcounter) {
     putchar('<');
-    fputs(tag->name, stdout);
+    char * name = expandtemplate(tag->name, counter, maxcounter);
+    fputs(name, stdout);
+    free(name);
 
     for (struct attr * attr = tag->attrs; attr; attr = attr->next) {
         char * name = expandtemplate(attr->name, counter, maxcounter);
@@ -347,9 +362,13 @@ void renderstarttag(const struct tag * tag, unsigned int counter, unsigned int m
     }
 }
 
-void renderendtag(const struct tag * tag) {
+void renderendtag(const struct tag * tag, unsigned int counter, unsigned int maxcounter) {
     if (isselfclosing(tag)) return;
-    printf("</%s>", tag->name);
+
+    char * name = expandtemplate(tag->name, counter, maxcounter);
+    printf("</%s>", name);
+    free(name);
+
     if (printnewlines && (!isinline(tag) || mode != HTML)) putchar('\n');
 }
 
@@ -386,7 +405,7 @@ void render(const struct node * node, unsigned int level, unsigned int initcount
                 }
             }
 
-            renderendtag(node->u.tag);
+            renderendtag(node->u.tag, i, maxcounter);
             break;
         }
     }
