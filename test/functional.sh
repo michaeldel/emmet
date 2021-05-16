@@ -23,8 +23,9 @@ tc() {
         shift
     fi
 
-    local output=$(echo "$1" | $cmd)
     numtests=$((numtests + 1))
+    # must not be local because $? will always equal 0 otherwise
+    output=$(echo "$1" | $cmd)
 
     if [ $? -ne 0 ]; then
         numerrors=$((numerrors + 1))
