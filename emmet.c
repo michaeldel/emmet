@@ -10,6 +10,7 @@
 
 #include "attr.h"
 #include "config.h"
+#include "node.h"
 #include "tag.h"
 #include "template.h"
 #include "util.h"
@@ -46,41 +47,6 @@ enum mode {
 
 enum mode mode = HTML;
 bool printnewlines = true;
-
-struct node * parse();
-
-enum nodetype { TAG, TEXT, GROUP };
-
-struct node {
-    enum nodetype type;
-    union {
-        struct node * group;
-        struct tag * tag;
-        char * text;
-    } u;
-
-    unsigned int counter;
-
-    struct node * parent;
-    struct node * child;
-    struct node * sibling;
-};
-
-struct node * mknode(enum nodetype type) {
-    struct node * result = malloc(sizeof(struct node));
-    if (!result) die("malloc node");
-
-    result->type = type;
-    result->u.group = NULL;
-
-    result->counter = 0;
-
-    result->parent = NULL;
-    result->child = NULL;
-    result->sibling = NULL;
-    
-    return result;
-}
 
 unsigned int readuint() {
     const size_t start = counter;
@@ -300,13 +266,7 @@ struct tag * readtag(struct tag * parent) {
     return tag;
 }
 
-struct tag * youngesttagintree(struct node * node) {
-    if (!node) return NULL;
-    if (node->type == TAG) return node->u.tag;
-
-    assert(node->type == GROUP);
-    return youngesttagintree(node->parent);
-}
+struct node * parse(void);
 
 struct node * readnode(struct node * parent) {
     if (peek() == '(') {
@@ -445,15 +405,6 @@ void clean(struct node * node) {
     if (node->sibling) clean(node->sibling);
 
     free(node);
-}
-
-struct node * lastsibling(struct node * node) {
-    assert(node);
-
-    struct node * result = node;
-    while (result->sibling) result = result->sibling;
-
-    return result;
 }
 
 struct node * parse(void) {
