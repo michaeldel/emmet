@@ -139,6 +139,88 @@ tc 'ul>li.item$@3*5' '
 </ul>
 '
 
+# exhaustive default names
+tc '.foo' '<div class="foo"></div>'
+tc 'b>.foo' '<b><span class="foo"></span></b>'
+
+tc 'p>.foo' '<p><span class="foo"></span></p>'
+
+tc 'ul>.foo' '
+<ul>
+  <li class="foo"></li>
+</ul>
+'
+tc 'ol>.foo' '
+<ol>
+  <li class="foo"></li>
+</ol>
+'
+
+tc 'table>.foo' '
+<table>
+  <tr class="foo"></tr>
+</table>
+'
+tc 'tr>.foo' '
+<tr>
+  <td class="foo"></td>
+</tr>
+'
+tc 'tbody>.foo' '
+<tbody>
+  <tr class="foo"></tr>
+</tbody>
+'
+tc 'thead>.foo' '
+<thead>
+  <tr class="foo"></tr>
+</thead>
+'
+tc 'tfoot>.foo' '
+<tfoot>
+  <tr class="foo"></tr>
+</tfoot>
+'
+
+tc 'colgroup>.foo' '
+<colgroup>
+  <col class="foo"></col>
+</colgroup>
+'
+tc 'select>.foo' '
+<select>
+  <option class="foo"></option>
+</select>
+'
+tc 'optgroup>.foo' '
+<optgroup>
+  <option class="foo"></option>
+</optgroup>
+'
+
+tc 'audio>.foo' '
+<audio>
+  <source class="foo"></source>
+</audio>
+'
+tc 'video>.foo' '
+<video>
+  <source class="foo"></source>
+</video>
+'
+
+tc 'object>.foo' '
+<object>
+  <param class="foo"></param>
+</object>
+'
+
+tc 'map>.foo' '
+<map>
+  <area class="foo"></area>
+</map>
+'
+
 # emmet.io documentation examples
 tc '#page>div.logo+ul#navigation>li*5>a{Item $}' '
 <div id="page">
